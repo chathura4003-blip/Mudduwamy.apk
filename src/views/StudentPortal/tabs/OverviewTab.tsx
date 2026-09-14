@@ -187,15 +187,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
 
           {/* Quick Profile Action Buttons Pill Group */}
-          <div className="pt-2 border-t border-amber-700/40 flex flex-wrap items-center justify-end gap-2 text-xs font-bold">
+          <div className="pt-2 border-t border-amber-700/40 grid grid-cols-2 sm:flex sm:flex-wrap items-center sm:justify-end gap-2 text-xs font-bold">
             {onOpenQrModal && (
               <button
                 type="button"
                 onClick={onOpenQrModal}
-                className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-amber-400/40 cursor-pointer shadow-xs active:scale-95 group"
+                className="px-3 py-2 sm:px-3.5 sm:py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-xs rounded-xl transition flex items-center justify-center sm:justify-start gap-1.5 border border-amber-400/40 cursor-pointer shadow-xs active:scale-95 group"
               >
                 <QrCode className="w-3.5 h-3.5 text-amber-400 animate-icon-pulse-glow" />
-                <span>{isSi ? 'QR හැඳුනුම්පත' : 'Digital ID'}</span>
+                <span className="truncate">{isSi ? 'QR හැඳුනුම්පත' : 'Digital ID'}</span>
               </button>
             )}
 
@@ -203,10 +203,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <button
                 type="button"
                 onClick={onOpenReportCardModal}
-                className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-emerald-400/40 cursor-pointer shadow-xs active:scale-95 group"
+                className="px-3 py-2 sm:px-3.5 sm:py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 font-bold text-xs rounded-xl transition flex items-center justify-center sm:justify-start gap-1.5 border border-emerald-400/40 cursor-pointer shadow-xs active:scale-95 group"
               >
                 <BarChart3 className="w-3.5 h-3.5 text-emerald-400 animate-icon-float" />
-                <span>{isSi ? 'ප්‍රගති වාර්තාව' : 'Report Card'}</span>
+                <span className="truncate">{isSi ? 'ප්‍රගති වාර්තාව' : 'Report Card'}</span>
               </button>
             )}
 
@@ -214,20 +214,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <button
                 type="button"
                 onClick={onOpenCertModal}
-                className="px-3.5 py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-violet-400/40 cursor-pointer shadow-xs active:scale-95 group"
+                className="px-3 py-2 sm:px-3.5 sm:py-1.5 bg-violet-500/20 hover:bg-violet-500/30 text-violet-200 font-bold text-xs rounded-xl transition flex items-center justify-center sm:justify-start gap-1.5 border border-violet-400/40 cursor-pointer shadow-xs active:scale-95 group"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-violet-400 animate-icon-pulse-glow" />
-                <span>{isSi ? 'සහතික සත්‍යාපනය' : 'Verify'}</span>
+                <span className="truncate">{isSi ? 'සහතික සත්‍යාපනය' : 'Verify'}</span>
               </button>
             )}
 
             <button
               type="button"
               onClick={handleOpenAiAssistant}
-              className="px-3.5 py-1.5 bg-blue-500/25 hover:bg-blue-500/35 text-blue-200 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-blue-400/50 cursor-pointer shadow-xs active:scale-95 group"
+              className="px-3 py-2 sm:px-3.5 sm:py-1.5 bg-blue-500/25 hover:bg-blue-500/35 text-blue-200 font-bold text-xs rounded-xl transition flex items-center justify-center sm:justify-start gap-1.5 border border-blue-400/50 cursor-pointer shadow-xs active:scale-95 group"
             >
               <Bot className="w-3.5 h-3.5 text-blue-400 animate-icon-pulse-glow" />
-              <span>AI ධර්ම Copilot</span>
+              <span className="truncate">AI Copilot</span>
             </button>
           </div>
         </div>
@@ -519,207 +519,68 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       )}
 
       {/* ========================================================= */}
-      {/* 🚀 3. VIBRANT 12-MODULE STUDENT ACTION BENTO HUB          */}
+      {/* 🚀 3. FOCUSED SCHOLAR SERVICES & ACADEMIC HIGHLIGHTS      */}
       {/* ========================================================= */}
       <div className="bg-white dark:bg-stone-900 border border-slate-200/90 dark:border-stone-800 rounded-3xl p-4 sm:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)] space-y-4">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white flex items-center justify-center font-black shadow-xs animate-icon-spin-slow">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white flex items-center justify-center font-black shadow-xs">
               ☸
             </div>
             <div>
               <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider font-serif">
-                {isSi ? 'ශිෂ්‍ය ප්‍රධාන මෙවලම් (Student Modules Hub)' : 'Core Student Modules'}
+                {isSi ? 'ශිෂ්‍ය සේවාවන් සහ සහතික (Student Services)' : 'Student Services & Verification'}
               </h2>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                {isSi ? 'සියලුම අධ්‍යයන අංශ ක්ෂණිකව පරිහරණය කරන්න' : 'Direct access to your learning resources'}
+                {isSi ? 'හැඳුනුම්පත්, සහතික සහ වාර්තා පොත් පරිහරණය' : 'Identity cards, certificates & official reports'}
               </p>
             </div>
           </div>
           <span className="text-[10px] text-amber-800 dark:text-amber-300 font-black px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800/80 shadow-2xs font-mono">
-            11 Modules
+            {isSi ? 'ක්ෂණික සේවා' : 'Direct Access'}
           </span>
         </div>
 
-        {/* 11-MODULE VIBRANT GRID (Soft Gradient Cards + Colored Line Icons) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
-          {/* Module 1: Study Notes & PDFs */}
-          <button
-            type="button"
-            onClick={() => switchSubTab('materials')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-sky-50/90 via-blue-50/40 to-white dark:from-sky-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-sky-100/90 hover:to-blue-50 dark:hover:from-sky-900/40 border border-sky-200/80 dark:border-sky-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400 border border-sky-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <BookOpen className="w-5 h-5 animate-icon-float" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors font-serif">
-                {isSi ? 'අධ්‍යයන නිබන්ධන' : 'Study Notes'}
-              </div>
-              <div className="text-[10px] text-sky-700/80 dark:text-sky-300/80 font-bold truncate">
-                {filteredMaterials.length} {isSi ? 'සටහන් හා PDF' : 'Files'}
-              </div>
-            </div>
-          </button>
-
-          {/* Module 2: Online Exams & Tests */}
-          <button
-            type="button"
-            onClick={() => switchSubTab('exams')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-fuchsia-50/40 to-white dark:from-purple-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-purple-100/90 hover:to-fuchsia-50 dark:hover:from-purple-900/40 border border-purple-200/80 dark:border-purple-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left relative shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <FileText className="w-5 h-5 animate-icon-sparkle" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors font-serif">
-                {isSi ? 'මාර්ගගත විභාග' : 'Online Exams'}
-              </div>
-              <div className="text-[10px] text-purple-700/80 dark:text-purple-300/80 font-bold truncate">
-                {activeUnattemptedExams.length} {isSi ? 'සක්‍රීය විභාග' : 'Active Tests'}
-              </div>
-            </div>
-            {activeUnattemptedExams.length > 0 && (
-              <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black animate-pulse shadow-xs">
-                {activeUnattemptedExams.length}
-              </span>
-            )}
-          </button>
-
-          {/* Module 3: Exam Marks & Results */}
-          <button
-            type="button"
-            onClick={() => switchSubTab('results')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 hover:to-teal-50 dark:hover:from-emerald-900/40 border border-emerald-200/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Award className="w-5 h-5 animate-icon-sparkle" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors font-serif">
-                {isSi ? 'ප්‍රතිඵල සහ ලකුණු' : 'Results & Marks'}
-              </div>
-              <div className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-bold truncate">
-                {completedSubmissions.length} {isSi ? 'නිමකළ පත්‍ර' : 'Completed'} • {studentPerformance.avgScore}%
-              </div>
-            </div>
-          </button>
-
-          {/* Module 4: Live Class Timetable */}
-          <button
-            type="button"
-            onClick={() => switchSubTab('timetable')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-yellow-50/40 to-white dark:from-amber-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-amber-100/90 hover:to-yellow-50 dark:hover:from-amber-900/40 border border-amber-300/80 dark:border-amber-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Calendar className="w-5 h-5 animate-icon-bounce" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors font-serif">
-                {isSi ? 'පන්ති කාලසටහන' : 'Live Timetable'}
-              </div>
-              <div className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-bold truncate">
-                {isSi ? 'දෛනික කාලච්ඡේද' : 'Daily Periods'}
-              </div>
-            </div>
-          </button>
-
-          {/* Module 5: E-Library & Past Papers */}
-          <button
-            type="button"
-            onClick={() => switchSubTab('library')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-blue-50/40 to-white dark:from-indigo-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-indigo-100/90 hover:to-blue-50 dark:hover:from-indigo-900/40 border border-indigo-200/80 dark:border-indigo-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <School className="w-5 h-5 animate-icon-float" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors font-serif">
-                {isSi ? 'ඩිජිටල් පුස්තකාලය' : 'E-Library'}
-              </div>
-              <div className="text-[10px] text-indigo-700/80 dark:text-indigo-300/80 font-bold truncate">
-                {libraryBooks.length} {isSi ? 'පොත් සහ පත්‍ර' : 'Books & Papers'}
-              </div>
-            </div>
-          </button>
-
-          {/* Module 6: QR Student ID Card */}
+        {/* 4-Item Streamlined Scholar Services Grid (No bottom-bar duplicate buttons) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          {/* Service 1: QR Student ID Card */}
           <button
             type="button"
             onClick={() => {
               if (onOpenQrModal) onOpenQrModal();
             }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-orange-50/90 via-amber-50/40 to-white dark:from-orange-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-orange-100/90 hover:to-amber-50 dark:hover:from-orange-900/40 border border-orange-200/80 dark:border-orange-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/40 to-white dark:from-amber-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-amber-100/90 border border-amber-200/80 dark:border-amber-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-orange-500/15 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <QrCode className="w-5 h-5 animate-icon-pulse-glow" />
+            <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
+              <QrCode className="w-4 h-4 sm:w-5 sm:h-5 animate-icon-pulse-glow" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors font-serif">
-                {isSi ? 'ඩිජිටල් හැඳුනුම්පත' : 'QR Student ID'}
+              <div className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors font-serif leading-tight">
+                {isSi ? 'QR හැඳුනුම්පත' : 'Student ID'}
               </div>
-              <div className="text-[10px] text-orange-700/80 dark:text-orange-300/80 font-bold truncate">
-                {isSi ? 'මුද්‍රණය සහ QR' : 'Print & Identity'}
+              <div className="text-[9.5px] sm:text-[10px] text-amber-700/80 dark:text-amber-300/80 font-bold truncate leading-tight">
+                {isSi ? 'ඩිජිටල් කාඩ්පත' : 'Digital Pass'}
               </div>
             </div>
           </button>
 
-          {/* Module 8: Term Report Card */}
+          {/* Service 2: Term Progress Report Card */}
           <button
             type="button"
             onClick={() => {
               if (onOpenReportCardModal) onOpenReportCardModal();
             }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-rose-50/90 via-pink-50/40 to-white dark:from-rose-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-rose-100/90 hover:to-pink-50 dark:hover:from-rose-900/40 border border-rose-200/80 dark:border-rose-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 border border-emerald-200/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <FileBadge className="w-5 h-5 animate-icon-float" />
+            <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
+              <FileBadge className="w-4 h-4 sm:w-5 sm:h-5 animate-icon-float" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors font-serif">
-                {isSi ? 'ප්‍රගති වාර්තා පොත' : 'Progress Report'}
+              <div className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors font-serif leading-tight">
+                {isSi ? 'ප්‍රගති වාර්තාව' : 'Progress Report'}
               </div>
-              <div className="text-[10px] text-rose-700/80 dark:text-rose-300/80 font-bold truncate">
-                {isSi ? 'නිල ලකුණු වාර්තාව' : 'Official Report'}
-              </div>
-            </div>
-          </button>
-
-          {/* Module 9: AI Dharma Copilot */}
-          <button
-            type="button"
-            onClick={handleOpenAiAssistant}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-blue-500/15 via-indigo-500/15 to-violet-500/15 hover:from-blue-500/25 hover:to-violet-500/25 border-2 border-blue-500/40 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-lg active:scale-95 group text-left shadow-xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400 border border-blue-500/40 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Bot className="w-5 h-5 animate-icon-pulse-glow" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate flex items-center gap-1 font-serif">
-                <span>AI ධර්ම Copilot</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
-              </div>
-              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-extrabold truncate">
-                {isSi ? 'බුද්ධිමත් ගුරු සහය' : 'Smart AI Tutor'}
-              </div>
-            </div>
-          </button>
-
-          {/* Module 10: WhatsApp Pirivena Chat */}
-          <button
-            type="button"
-            onClick={handleOpenChat}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-green-50/40 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 hover:to-green-50 dark:hover:from-emerald-900/40 border border-emerald-300/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <MessageCircle className="w-5 h-5 animate-icon-bounce" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors font-serif">
-                {isSi ? 'පිරිවෙන් සජීවී Chat' : 'Pirivena Chat'}
-              </div>
-              <div className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-bold truncate">
-                {isSi ? 'ගුරු-සිසු පණිවිඩ' : 'Live Group Chat'}
+              <div className="text-[9.5px] sm:text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-bold truncate leading-tight">
+                {isSi ? 'වාර ලකුණු පොත' : 'Term Marksheet'}
               </div>
             </div>
           </button>
@@ -730,17 +591,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             onClick={() => {
               if (onOpenCertModal) onOpenCertModal();
             }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white dark:from-violet-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-violet-100/90 hover:to-purple-50 dark:hover:from-violet-900/40 border border-violet-200/80 dark:border-violet-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl bg-gradient-to-br from-violet-50/90 via-purple-50/40 to-white dark:from-violet-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-violet-100/90 hover:to-purple-50 dark:hover:from-violet-900/40 border border-violet-200/80 dark:border-violet-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-violet-500/15 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400 border border-violet-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <ShieldCheck className="w-5 h-5 animate-icon-pulse-glow" />
+            <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-violet-500/15 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400 border border-violet-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 animate-icon-pulse-glow" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors font-serif">
+              <div className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors font-serif leading-tight">
                 {isSi ? 'සහතික සත්‍යාපනය' : 'Verify Certificate'}
               </div>
-              <div className="text-[10px] text-violet-700/80 dark:text-violet-300/80 font-bold truncate">
-                {isSi ? 'වලංගුභාවය පරීක්ෂාව' : 'Online Verification'}
+              <div className="text-[9.5px] sm:text-[10px] text-violet-700/80 dark:text-violet-300/80 font-bold truncate leading-tight">
+                {isSi ? 'වලංගුභාවය' : 'Online Verify'}
               </div>
             </div>
           </button>
@@ -749,17 +610,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <button
             type="button"
             onClick={() => switchSubTab('settings')}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-slate-100/90 via-stone-100/40 to-white dark:from-stone-800/60 dark:via-stone-900 dark:to-stone-900 hover:from-slate-200/90 hover:to-stone-100 dark:hover:from-stone-750 border border-slate-200/90 dark:border-stone-700 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3.5 rounded-2xl bg-gradient-to-br from-slate-100/90 via-stone-100/40 to-white dark:from-stone-800/60 dark:via-stone-900 dark:to-stone-900 hover:from-slate-200/90 hover:to-stone-100 dark:hover:from-stone-750 border border-slate-200/90 dark:border-stone-700 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-slate-500/15 text-slate-700 dark:bg-stone-700/40 dark:text-slate-300 border border-slate-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Settings className="w-5 h-5 animate-icon-spin-slow" />
+            <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-slate-500/15 text-slate-700 dark:bg-stone-700/40 dark:text-slate-300 border border-slate-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
+              <Settings className="w-4 h-4 sm:w-5 sm:h-5 animate-icon-spin-slow" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors font-serif">
+              <div className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors font-serif leading-tight">
                 {isSi ? 'ගිණුම් සැකසුම්' : 'My Account'}
               </div>
-              <div className="text-[10px] text-slate-600 dark:text-slate-400 font-bold truncate">
-                {isSi ? 'මුරපද සහ තොරතුරු' : 'Profile & PIN'}
+              <div className="text-[9.5px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-bold truncate leading-tight">
+                {isSi ? 'මුරපද සහ විස්තර' : 'Profile & PIN'}
               </div>
             </div>
           </button>

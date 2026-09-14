@@ -301,10 +301,10 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
 
               {/* User Name & Role Status */}
               <div className="min-w-0 flex-1 truncate">
-                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate block leading-tight">
+                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate block leading-snug">
                   {user.monkName || user.name || (isSi ? 'පරිශීලක' : 'User')}
                 </span>
-                <span className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-400 truncate block leading-tight">
+                <span className="text-[9.5px] sm:text-[10px] font-bold text-amber-700 dark:text-amber-400 truncate block leading-normal">
                   {roleText} {user.customId ? `• ${user.customId}` : ''}
                 </span>
               </div>
@@ -320,8 +320,9 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
                   triggerHaptic('medium');
                   onOpenAiAssistant();
                 }}
-                className="w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] touch-manipulation rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 hover:text-white flex items-center justify-center shadow-xs transition cursor-pointer active:scale-90 group border border-amber-400/40 p-1.5"
+                className="w-8.5 h-8.5 sm:w-10 sm:h-10 min-w-[34px] min-h-[34px] sm:min-w-[36px] sm:min-h-[36px] touch-manipulation rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-amber-100 hover:text-white flex items-center justify-center shadow-xs transition cursor-pointer active:scale-90 group border border-amber-400/40 p-1.5"
                 title={isSi ? 'AI ධර්ම සහකාර' : 'AI Dharma Copilot'}
+                aria-label="AI Assistant"
               >
                 <Bot className="w-full h-full animate-icon-pulse-glow group-hover:scale-110 transition-transform" />
               </button>
@@ -333,20 +334,21 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
                 triggerHaptic('light');
                 setLanguage(isSi ? 'en' : 'si');
               }}
-              className="h-9 sm:h-10 min-h-[36px] px-2.5 sm:px-3 touch-manipulation rounded-2xl text-[10px] sm:text-[11px] font-black border border-slate-200 dark:border-stone-700 bg-slate-100 dark:bg-stone-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition cursor-pointer active:scale-95 flex items-center justify-center shadow-2xs shrink-0"
+              className="h-8.5 sm:h-10 min-h-[34px] sm:min-h-[36px] px-2 sm:px-3 touch-manipulation rounded-2xl text-[10px] sm:text-[11px] font-black border border-slate-200 dark:border-stone-700 bg-slate-100 dark:bg-stone-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 transition cursor-pointer active:scale-95 flex items-center justify-center shadow-2xs shrink-0 leading-none"
               title={isSi ? 'Switch to English' : 'සිංහල භාෂාවට මාරු වන්න'}
+              aria-label="Switch Language"
             >
               <span>{isSi ? 'EN' : 'සිංහල'}</span>
             </button>
 
-            {/* Dark / Light Toggle */}
+            {/* Dark / Light Toggle - hidden on extra small screens (<360px) to avoid crowding, fully accessible in drawer */}
             {!isSubTab && (
               <button
                 onClick={() => {
                   triggerHaptic('light');
                   toggleTheme();
                 }}
-                className="w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] touch-manipulation rounded-2xl flex items-center justify-center border border-slate-200 dark:border-stone-700 bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer active:scale-90 shadow-2xs group"
+                className="hidden xs:flex w-8.5 h-8.5 sm:w-10 sm:h-10 min-w-[34px] min-h-[34px] sm:min-w-[36px] sm:min-h-[36px] touch-manipulation rounded-2xl items-center justify-center border border-slate-200 dark:border-stone-700 bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition cursor-pointer active:scale-90 shadow-2xs group"
                 title={
                   isDarkMode
                     ? isSi
@@ -356,6 +358,7 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
                       ? 'රාත්‍රී මාදිලිය'
                       : 'Dark Mode'
                 }
+                aria-label="Toggle Theme"
               >
                 {isDarkMode ? (
                   <Sun className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-amber-400 animate-icon-spin-slow group-hover:rotate-90 transition-transform" strokeWidth={2.2} />
@@ -371,7 +374,7 @@ export const Navbar: React.FC<NavbarProps> = React.memo(({
                 triggerHaptic('light');
                 setIsDrawerOpen(true);
               }}
-              className="w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] touch-manipulation rounded-2xl bg-slate-100 dark:bg-stone-800 hover:bg-slate-200 dark:hover:bg-stone-700 text-slate-900 dark:text-white flex items-center justify-center transition cursor-pointer active:scale-90 shrink-0 border border-slate-200/80 dark:border-stone-700 shadow-2xs"
+              className="w-8.5 h-8.5 sm:w-10 sm:h-10 min-w-[34px] min-h-[34px] sm:min-w-[36px] sm:min-h-[36px] touch-manipulation rounded-2xl bg-slate-100 dark:bg-stone-800 hover:bg-slate-200 dark:hover:bg-stone-700 text-slate-900 dark:text-white flex items-center justify-center transition cursor-pointer active:scale-90 shrink-0 border border-slate-200/80 dark:border-stone-700 shadow-2xs"
               title={isSi ? 'මෙනුව විවෘත කරන්න' : 'Open Navigation Menu'}
               aria-label="Open Navigation Menu"
             >

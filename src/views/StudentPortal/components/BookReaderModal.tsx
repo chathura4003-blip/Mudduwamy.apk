@@ -112,16 +112,18 @@ export const BookReaderModal: React.FC<BookReaderModalProps> = ({
             <button
               type="button"
               onClick={handleOpenUniversalViewer}
-              className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-stone-950 text-xs font-black rounded-xl flex items-center gap-1 cursor-pointer shadow-xs transition"
+              className="px-2.5 sm:px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-stone-950 text-xs font-black rounded-xl flex items-center gap-1 cursor-pointer shadow-xs transition"
+              title={isSi ? 'සම්පූර්ණ තිරයෙන්' : 'Full Screen'}
             >
               <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{isSi ? 'සම්පූර්ණ තිරයෙන්' : 'Full Screen'}</span>
+              <span className="hidden xs:inline">{isSi ? 'සම්පූර්ණ තිරයෙන්' : 'Full Screen'}</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-1 hover:bg-slate-100 dark:hover:bg-stone-800 rounded-xl cursor-pointer text-slate-500"
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-stone-800 rounded-xl cursor-pointer text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>

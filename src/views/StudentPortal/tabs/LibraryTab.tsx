@@ -49,15 +49,15 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         </div>
 
         {/* Search and Category Filter */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[160px] flex-1">
-            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-2.5" />
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="relative w-full sm:min-w-[180px]">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input id="librarytab-input-1" name="librarytab-input-1"
               type="text"
               value={librarySearch}
               onChange={(e) => setLibrarySearch(e.target.value)}
               placeholder={isSi ? 'පොත් සොයන්න...' : 'Search books...'}
-              className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-stone-700 text-xs text-slate-900 dark:text-white bg-slate-50 dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-8 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-stone-700 text-xs text-slate-900 dark:text-white bg-slate-50 dark:bg-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -67,7 +67,7 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
               triggerHaptic('light');
               setSelectedLibraryCategory(e.target.value);
             }}
-            className="px-3 py-2 rounded-xl border border-slate-200 dark:border-stone-700 text-xs font-bold bg-white dark:bg-stone-800 text-slate-900 dark:text-white cursor-pointer shadow-2xs"
+            className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-stone-700 text-xs font-bold bg-white dark:bg-stone-800 text-slate-900 dark:text-white cursor-pointer shadow-2xs"
           >
             <option value="all">{isSi ? 'සියලුම කාණ්ඩ' : 'All Categories'}</option>
             {libraryCategories.map((cat) => (

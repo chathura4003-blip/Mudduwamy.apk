@@ -209,12 +209,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
           </span>
         </div>
 
-        {/* 20-MODULE GRID (Vibrant Themed Cards with Soft BG & Line Colored Icons) */}
+        {/* 20-MODULE GRID (Responsive: Core operations prioritized on mobile, full catalog on tablet/desktop) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {/* Module 1: Students */}
+          {/* Module 1: Students (Hidden on phone as it's Bottom Nav Tab 2) */}
           <button
             onClick={() => onSwitchSubTab('students')}
-            className="flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white dark:from-blue-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-blue-100/90 hover:to-sky-50 dark:hover:from-blue-900/40 border border-blue-200/80 dark:border-blue-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="hidden sm:flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-sky-50/40 to-white dark:from-blue-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-blue-100/90 hover:to-sky-50 dark:hover:from-blue-900/40 border border-blue-200/80 dark:border-blue-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
             <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0 font-black text-base group-hover:scale-110 transition-transform shadow-2xs">
               <span className="inline-block animate-icon-spin-slow group-hover:scale-125 transition-transform">☸</span>
@@ -229,10 +229,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
             </div>
           </button>
 
-          {/* Module 2: Teachers */}
+          {/* Module 2: Teachers (Hidden on phone as it's Bottom Nav Tab 3) */}
           <button
             onClick={() => onSwitchSubTab('teachers')}
-            className="flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 hover:to-teal-50 dark:hover:from-emerald-900/40 border border-emerald-200/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="hidden sm:flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 hover:to-teal-50 dark:hover:from-emerald-900/40 border border-emerald-200/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
             <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
               <GraduationCap className="w-5 h-5 animate-icon-bounce group-hover:scale-125 group-hover:rotate-12 transition-transform duration-300" />
@@ -247,10 +247,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
             </div>
           </button>
 
-          {/* Module 3: Classes & Grades */}
+          {/* Module 3: Classes (Hidden on phone as it's Bottom Nav Tab 4) */}
           <button
             onClick={() => onSwitchSubTab('classes')}
-            className="flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/40 to-white dark:from-indigo-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-indigo-100/90 hover:to-violet-50 dark:hover:from-indigo-900/40 border border-indigo-200/80 dark:border-indigo-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
+            className="hidden sm:flex items-center gap-3 p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-violet-50/40 to-white dark:from-indigo-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-indigo-100/90 hover:to-violet-50 dark:hover:from-indigo-900/40 border border-indigo-200/80 dark:border-indigo-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 group text-left shadow-2xs"
           >
             <div className="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
               <School className="w-5 h-5 animate-icon-pulse-glow group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-300" />

@@ -228,7 +228,7 @@ export const BottomNavigationBar: React.FC = () => {
       aria-label="Mobile Bottom Navigation"
       className="fixed bottom-0 left-0 right-0 z-[9980] bg-white/95 dark:bg-stone-900/95 backdrop-blur-2xl border-t border-amber-500/20 dark:border-stone-800 pb-safe shadow-[0_-10px_35px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_35px_rgba(0,0,0,0.6)] select-none transition-colors transform-gpu print:hidden"
     >
-      <div className="max-w-md mx-auto px-3 py-1.5 flex items-center justify-around gap-1.5">
+      <div className="max-w-md mx-auto px-1.5 sm:px-3 py-1 flex items-center justify-around gap-0.5 sm:gap-1.5">
         {navItems.map((item) => {
           const isActive = isCurrentActive(item);
           const Icon = item.icon;
@@ -239,7 +239,7 @@ export const BottomNavigationBar: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => handleNavClick(item.id)}
-              className={`flex-1 min-h-[48px] py-1 px-1 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-150 cursor-pointer active:scale-95 touch-manipulation relative ${
+              className={`flex-1 min-h-[46px] sm:min-h-[48px] py-1 px-0.5 sm:px-1 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-150 cursor-pointer active:scale-95 touch-manipulation relative ${
                 isActive
                   ? 'text-amber-600 dark:text-amber-400 font-black'
                   : 'text-slate-500 dark:text-stone-400 hover:text-slate-800 dark:hover:text-stone-200 font-medium'
@@ -247,7 +247,7 @@ export const BottomNavigationBar: React.FC = () => {
             >
               {/* Material 3 Active Pill Indicator */}
               <div
-                className={`px-4 py-1 rounded-full transition-all duration-150 flex items-center justify-center relative ${
+                className={`px-2.5 sm:px-4 py-0.5 sm:py-1 rounded-full transition-all duration-150 flex items-center justify-center relative ${
                   isActive
                     ? 'bg-gradient-to-r from-amber-500/20 via-amber-400/25 to-amber-500/20 text-amber-600 dark:text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
                     : 'bg-transparent text-slate-500 dark:text-stone-400'
@@ -263,7 +263,7 @@ export const BottomNavigationBar: React.FC = () => {
                 )}
               </div>
 
-              <span className="text-[10px] xs:text-[10.5px] sm:text-[11px] tracking-tight w-full text-center px-0.5 truncate leading-tight font-sans font-bold pt-0.5">
+              <span className="text-[10px] sm:text-[11px] tracking-tight w-full text-center px-0.5 truncate leading-normal font-sans font-bold pt-0.5">
                 {label}
               </span>
             </button>

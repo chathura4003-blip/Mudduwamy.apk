@@ -321,13 +321,34 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('pirivena-chat-active');
+      navigationHistoryManager.pushModal('floating_chat', () => setIsOpen(false), 30);
     } else {
       document.body.classList.remove('pirivena-chat-active');
+      navigationHistoryManager.removeModal('floating_chat');
     }
     return () => {
       document.body.classList.remove('pirivena-chat-active');
+      navigationHistoryManager.removeModal('floating_chat');
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (showFullEmojiModal) {
+      navigationHistoryManager.pushModal('chat_emoji_modal', () => setShowFullEmojiModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('chat_emoji_modal');
+    }
+    return () => navigationHistoryManager.removeModal('chat_emoji_modal');
+  }, [showFullEmojiModal]);
+
+  useEffect(() => {
+    if (confirmDialog?.isOpen) {
+      navigationHistoryManager.pushModal('chat_confirm_dialog', () => setConfirmDialog(null), 40);
+    } else {
+      navigationHistoryManager.removeModal('chat_confirm_dialog');
+    }
+    return () => navigationHistoryManager.removeModal('chat_confirm_dialog');
+  }, [confirmDialog?.isOpen]);
 
   // Dynamic Virtual Keyboard & Visual Viewport Handler (Active ONLY when chat is open)
   useEffect(() => {

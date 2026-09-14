@@ -38,6 +38,7 @@ import { useLanguage } from '../../../context/LanguageContext';
 import { useToast } from '../../../context/ToastContext';
 import { playNotificationSound } from '../../../utils/soundHelper';
 import { notificationService } from '../../../services/notificationService';
+import { navigationHistoryManager } from '../../../services/navigationHistoryManager';
 import {
   getSriLankaDate,
   getSriLankaDateString,
@@ -121,6 +122,25 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const [currentSecTick, setCurrentSecTick] = useState<number>(() => Date.now());
   const [showClassesModal, setShowClassesModal] = useState<boolean>(false);
   const [showSubjectsModal, setShowSubjectsModal] = useState<boolean>(false);
+
+  // Connect OverviewTab dialogs to Android hardware back button
+  useEffect(() => {
+    if (showClassesModal) {
+      navigationHistoryManager.pushModal('teacher_overview_classes', () => setShowClassesModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('teacher_overview_classes');
+    }
+    return () => navigationHistoryManager.removeModal('teacher_overview_classes');
+  }, [showClassesModal]);
+
+  useEffect(() => {
+    if (showSubjectsModal) {
+      navigationHistoryManager.pushModal('teacher_overview_subjects', () => setShowSubjectsModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('teacher_overview_subjects');
+    }
+    return () => navigationHistoryManager.removeModal('teacher_overview_subjects');
+  }, [showSubjectsModal]);
 
   // 🔔 Timetable Period Reminder Notifications State
   const [periodAlertsEnabled, setPeriodAlertsEnabled] = useState<boolean>(() => {
@@ -401,13 +421,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </span>
               </div>
 
-              <h1 className="text-base sm:text-2xl font-serif font-black text-white tracking-tight break-words truncate leading-tight">
+              <h1 className="text-base sm:text-2xl font-serif font-black text-white tracking-tight leading-snug line-clamp-2 break-words">
                 {user?.monkStatus === 'monk' && user?.monkName
                   ? user.monkName
                   : user?.name || user?.monkName || 'ආචාර්යතුමා'}
               </h1>
 
-              <p className="text-amber-100/90 text-[11px] sm:text-xs font-semibold leading-tight truncate">
+              <p className="text-amber-100/90 text-[11px] sm:text-xs font-semibold leading-normal line-clamp-2">
                 {user?.qualification ||
                   (user as any)?.qualifications ||
                   (user?.monkStatus === 'monk'
@@ -418,11 +438,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
 
           {/* Quick Timetable & Live Clock Bar */}
-          <div className="pt-2.5 border-t border-amber-600/30 flex items-center justify-between gap-2 text-xs flex-wrap">
+          <div className="pt-2.5 border-t border-amber-600/30 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 text-xs">
             {currentTime ? (
               <span className="text-[10px] sm:text-[11px] font-medium text-amber-200/80 flex items-center gap-1">
                 <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-icon-spin-slow" />
-                <span>{currentTime}</span>
+                <span className="leading-normal">{currentTime}</span>
               </span>
             ) : <div />}
 
@@ -433,7 +453,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 if (onOpenTimetable) onOpenTimetable();
                 else handleTabNavigate('timetable');
               }}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-[11px] sm:text-xs shadow-md transition cursor-pointer active:scale-95 ml-auto group"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-[11px] sm:text-xs shadow-md transition cursor-pointer active:scale-95 w-full xs:w-auto justify-center group min-h-[36px]"
             >
               <Calendar className="w-3.5 h-3.5 text-stone-950 animate-icon-bounce group-hover:rotate-12 transition-transform" />
               <span>මගේ කාලසටහන (Timetable)</span>
@@ -677,7 +697,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       )}
 
       {/* ========================================================= */}
-      {/* ⚡ 3. ADMIN-STYLE VIBRANT 6-ACTION QUICK MODULES HUB       */}
+      {/* ⚡ 3. FOCUSED TEACHER DAILY WORKFLOW SHORTCUTS            */}
       {/* ========================================================= */}
       <div className="bg-white dark:bg-stone-900 border border-slate-200/90 dark:border-stone-800 rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between px-1">
@@ -687,17 +707,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
             <div>
               <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                {isSi ? 'ප්‍රධාන මෙහෙයුම් මෙවලම් කට්ටලය (Core Management Hub)' : 'Core Management Hub'}
+                {isSi ? 'දෛනික ගුරු මෙහෙයුම් (Daily Teaching Tools)' : 'Daily Teaching Tools'}
               </h2>
             </div>
           </div>
-          <span className="text-[10px] text-amber-800 dark:text-amber-300 font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800/80 shadow-2xs">
-            6 Direct Tools
+          <span className="text-[10px] text-amber-800 dark:text-amber-300 font-black px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800/80 shadow-2xs font-mono">
+            {isSi ? 'ක්ෂණික මෙවලම්' : 'Quick Actions'}
           </span>
         </div>
 
-        {/* 6-Grid Native Action Tiles (Admin Dashboard Pro Aesthetics) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        {/* 3-Action Focused Cards (Creating & Live Monitoring without bottom-nav duplication) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {/* Action 1: Create Exam */}
           <button
             onClick={() => {
@@ -707,15 +727,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             }}
             className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-fuchsia-50/30 to-white dark:from-purple-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-purple-100/90 border border-purple-200/80 dark:border-purple-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
               <PlusCircle className="w-5 h-5 animate-icon-pulse-glow group-hover:rotate-90 transition-transform duration-300" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight truncate">
-                {isSi ? 'නව විභාගයක්' : 'New Exam'}
+                {isSi ? 'නව විභාගයක් සකසන්න' : 'Create New Exam'}
               </h4>
               <p className="text-[10px] text-purple-700/80 dark:text-purple-300/80 font-bold truncate">
-                {isSi ? 'AI Vision / Manual' : 'AI / OCR Builder'}
+                {isSi ? 'AI Vision / Manual ප්‍රශ්න පත්‍ර' : 'AI / Manual Builder'}
               </p>
             </div>
           </button>
@@ -728,41 +748,20 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             }}
             className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-rose-50/90 via-pink-50/30 to-white dark:from-rose-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-rose-100/90 border border-rose-200/80 dark:border-rose-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
               <Activity className="w-5 h-5 animate-icon-heartbeat group-hover:scale-125 transition-transform duration-300" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors leading-tight truncate">
-                {isSi ? 'විභාග අධීක්ෂණය' : 'Live Monitoring'}
+                {isSi ? 'සජීවී විභාග අධීක්ෂණය' : 'Live Exam Monitoring'}
               </h4>
               <p className="text-[10px] text-rose-700/80 dark:text-rose-300/80 font-bold truncate">
-                {isSi ? 'ලකුණු & පිළිතුරු' : 'Marks & Submissions'}
+                {isSi ? 'ලකුණු සහ පිළිතුරු පරීක්ෂාව' : 'Review Student Papers'}
               </p>
             </div>
           </button>
 
-          {/* Action 3: Student Roster */}
-          <button
-            onClick={() => {
-              triggerHaptic('medium');
-              handleTabNavigate('roster');
-            }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/90 via-teal-50/30 to-white dark:from-emerald-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-emerald-100/90 border border-emerald-200/80 dark:border-emerald-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Users className="w-5 h-5 animate-icon-bounce group-hover:scale-125 transition-transform duration-300" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors leading-tight truncate">
-                {isSi ? 'ශිෂ්‍ය නාමාවලිය' : 'Student Roster'}
-              </h4>
-              <p className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-bold truncate">
-                {assignedStudents.length} {isSi ? 'ලියාපදිංචි සිසුන්' : 'Students'}
-              </p>
-            </div>
-          </button>
-
-          {/* Action 4: Upload Material */}
+          {/* Action 3: Upload Material */}
           <button
             onClick={() => {
               triggerHaptic('medium');
@@ -770,61 +769,40 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             }}
             className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/90 via-sky-50/30 to-white dark:from-blue-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-blue-100/90 border border-blue-200/80 dark:border-blue-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
           >
-            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs">
               <Upload className="w-5 h-5 animate-icon-float group-hover:-translate-y-1 transition-transform duration-300" />
             </div>
             <div className="min-w-0 flex-1">
               <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight truncate">
-                {isSi ? 'නිබන්ධන Upload' : 'Upload Notes'}
+                {isSi ? 'නිබන්ධන Upload කරන්න' : 'Upload Study Notes'}
               </h4>
               <p className="text-[10px] text-blue-700/80 dark:text-blue-300/80 font-bold truncate">
-                {assignedMaterials.length} {isSi ? 'ගොනු' : 'Files'}
+                {assignedMaterials.length} {isSi ? 'ගොනු සක්‍රීයයි' : 'Files Active'}
               </p>
             </div>
           </button>
 
-          {/* Action 5: Timetable */}
-          <button
-            onClick={() => {
-              triggerHaptic('medium');
-              if (onOpenTimetable) onOpenTimetable();
-              else handleTabNavigate('timetable');
-            }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-amber-50/90 via-orange-50/30 to-white dark:from-amber-950/30 dark:via-stone-900 dark:to-stone-900 hover:from-amber-100/90 border border-amber-200/80 dark:border-amber-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Calendar className="w-5 h-5 animate-icon-bounce group-hover:scale-125 transition-transform duration-300" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors leading-tight truncate">
-                {isSi ? 'කාලසටහන' : 'Timetable'}
-              </h4>
-              <p className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-bold truncate">
-                {isSi ? 'සතිපතා කාලසටහන' : 'Weekly Schedule'}
-              </p>
-            </div>
-          </button>
+        </div>
 
-          {/* Action 6: Settings */}
-          <button
-            onClick={() => {
-              triggerHaptic('medium');
-              handleTabNavigate('settings');
-            }}
-            className="flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-gradient-to-br from-slate-50/90 via-stone-50/40 to-white dark:from-slate-900/40 dark:via-stone-900 dark:to-stone-900 hover:from-slate-100/90 border border-slate-200/80 dark:border-slate-800/60 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-95 text-left group shadow-2xs"
-          >
-            <div className="w-10 h-10 rounded-xl bg-slate-500/15 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 border border-slate-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-2xs">
-              <Settings className="w-5 h-5 animate-icon-spin-slow group-hover:scale-125 transition-transform duration-300" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h4 className="font-black text-xs text-slate-900 dark:text-white group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors leading-tight truncate">
-                {isSi ? 'ගිණුම් සැකසුම්' : 'Settings & Info'}
-              </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold truncate">
-                {isSi ? 'බලපත්‍ර & App Specs' : 'Scope & App Specs'}
-              </p>
-            </div>
-          </button>
+        {/* Teacher Assigned Summary Pill */}
+        <div className="pt-2.5 border-t border-slate-100 dark:border-stone-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <span className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+              <School className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>{assignedClasses.length} {isSi ? 'පන්ති' : 'Classes'}</span>
+            </span>
+            <span className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+              <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>{assignedStudents.length} {isSi ? 'සිසුන්' : 'Students'}</span>
+            </span>
+            <span className="font-bold flex items-center gap-1 text-slate-800 dark:text-slate-200">
+              <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{assignedSubjects.length} {isSi ? 'විෂයයන්' : 'Subjects'}</span>
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-bold">
+            {assignedExams.length} {isSi ? 'සක්‍රීය විභාග' : 'Active Exams'}
+          </span>
         </div>
       </div>
 

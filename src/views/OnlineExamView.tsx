@@ -4,6 +4,7 @@ import type { Exam, Question } from '../types';
 import { examsApi } from '../api';
 import { useToast } from '../context/ToastContext';
 import { resolveSubjectSinhalaName, resolveClassSinhalaName } from '../utils/subjectHelper';
+import { navigationHistoryManager } from '../services/navigationHistoryManager';
 import {
   Clock,
   CheckCircle2,
@@ -42,6 +43,7 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
   const [autoSaveStatus, setAutoSaveStatus] = useState('ලියමින් පවතී (Draft)');
   const [isSavedToDatabase, setIsSavedToDatabase] = useState(false);
   const [showSubmitConfirmModal, setShowSubmitConfirmModal] = useState(false);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [paletteFilter, setPaletteFilter] = useState<'all' | 'answered' | 'unanswered' | 'flagged'>(
     'all'
   );
@@ -49,6 +51,33 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
 
   const cleanSubjectName = resolveSubjectSinhalaName(exam.subject || exam.subjectId, undefined, exam.title);
   const cleanClassName = resolveClassSinhalaName(exam.gradeClass || exam.classId);
+
+  // Connect Android hardware back button with active exam dialogs
+  useEffect(() => {
+    if (showSubmitConfirmModal) {
+      navigationHistoryManager.pushModal('exam_submit_confirm', () => setShowSubmitConfirmModal(false), 55);
+    } else {
+      navigationHistoryManager.removeModal('exam_submit_confirm');
+    }
+    return () => navigationHistoryManager.removeModal('exam_submit_confirm');
+  }, [showSubmitConfirmModal]);
+
+  useEffect(() => {
+    if (showExitConfirmModal) {
+      navigationHistoryManager.pushModal('exam_exit_confirm', () => setShowExitConfirmModal(false), 50);
+    } else {
+      navigationHistoryManager.removeModal('exam_exit_confirm');
+    }
+    return () => navigationHistoryManager.removeModal('exam_exit_confirm');
+  }, [showExitConfirmModal]);
+
+  useEffect(() => {
+    const handleRequestExit = () => {
+      setShowExitConfirmModal(true);
+    };
+    window.addEventListener('request-exam-exit-confirm', handleRequestExit);
+    return () => window.removeEventListener('request-exam-exit-confirm', handleRequestExit);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -274,7 +303,7 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
     });
 
   return (
-    <div className="min-h-screen min-h-screen-dvh bg-stone-100 dark:bg-stone-950 p-3 sm:p-6 pt-safe pb-safe flex flex-col justify-between space-y-6 text-stone-900 dark:text-stone-100">
+    <div className="min-h-screen min-h-screen-dvh w-full max-w-full overflow-x-clip bg-stone-100 dark:bg-stone-950 p-3 sm:p-6 pt-safe pb-safe flex flex-col justify-between space-y-6 text-stone-900 dark:text-stone-100">
       {/* Top Header Bar */}
       <div className="bg-amber-950 dark:bg-stone-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg border-b-4 border-amber-500 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -810,6 +839,46 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
                       <span>තහවුරු කර භාරදෙන්න</span>
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* SAFE EXIT CONFIRMATION MODAL */}
+      {showExitConfirmModal &&
+        createPortal(
+          <div className="fixed inset-0 z-[99999] bg-stone-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-2xl sm:rounded-3xl max-w-md w-full p-5 sm:p-6 text-center space-y-4 shadow-2xl animate-fade-in">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center border border-amber-300/40">
+                <AlertTriangle className="w-7 h-7 sm:w-8 sm:h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-serif font-bold text-base sm:text-lg text-stone-900 dark:text-stone-100 leading-snug">
+                  විභාගයෙන් ඉවත් වීමට අවශ්‍යද?
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+                  ඔබ දැනට ඇතුළත් කර ඇති පිළිතුරු කෙටුම්පතක් ලෙස සටහන්ව පවතී. විභාගය භාරදීමට පෙර ඉවත් වුවහොත් මෙම විභාගයේ ලකුණු සටහන් නොවේ. ඔබට සැබවින්ම පිටවීමට අවශ්‍යද?
+                </p>
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowExitConfirmModal(false)}
+                  className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition min-h-[44px] flex items-center justify-center cursor-pointer"
+                >
+                  නැත, විභාගය කරගෙන යන්න
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExitConfirmModal(false);
+                    onCancel();
+                  }}
+                  className="w-full sm:flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition min-h-[44px] flex items-center justify-center shadow-md cursor-pointer"
+                >
+                  ඔව්, ඉවත් වන්න
                 </button>
               </div>
             </div>

@@ -16,6 +16,7 @@ import { PirivenaClass, Subject, User } from '../../../types';
 import { useLanguage } from '../../../context/LanguageContext';
 import { ClassTimetableModal } from '../modals';
 import { classesApi } from '../../../api/classesApi';
+import { navigationHistoryManager } from '../../../services/navigationHistoryManager';
 
 interface ClassesTabProps {
   classes: PirivenaClass[];
@@ -59,6 +60,15 @@ export const ClassesTab: React.FC<ClassesTabProps> = React.memo(({
     }
   });
   const [timetableClass, setTimetableClass] = useState<PirivenaClass | null>(null);
+
+  React.useEffect(() => {
+    if (timetableClass) {
+      navigationHistoryManager.pushModal('class_timetable_modal', () => setTimetableClass(null), 35);
+    } else {
+      navigationHistoryManager.removeModal('class_timetable_modal');
+    }
+    return () => navigationHistoryManager.removeModal('class_timetable_modal');
+  }, [timetableClass]);
 
   React.useEffect(() => {
     try {

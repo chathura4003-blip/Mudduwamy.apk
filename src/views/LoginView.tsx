@@ -41,6 +41,7 @@ import {
   isAutoLiveUpdateEnabled,
   setAutoLiveUpdateEnabled,
 } from '../services/liveUpdateService';
+import { navigationHistoryManager } from '../services/navigationHistoryManager';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface LoginViewProps {
@@ -134,6 +135,25 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
     } catch (_) {}
   }, []);
 
+  // Connect Android back button with Login View modals
+  useEffect(() => {
+    if (showHelpModal) {
+      navigationHistoryManager.pushModal('login_help_modal', () => setShowHelpModal(false), 50);
+    } else {
+      navigationHistoryManager.removeModal('login_help_modal');
+    }
+    return () => navigationHistoryManager.removeModal('login_help_modal');
+  }, [showHelpModal]);
+
+  useEffect(() => {
+    if (showSettingsModal) {
+      navigationHistoryManager.pushModal('login_settings_modal', () => setShowSettingsModal(false), 50);
+    } else {
+      navigationHistoryManager.removeModal('login_settings_modal');
+    }
+    return () => navigationHistoryManager.removeModal('login_settings_modal');
+  }, [showSettingsModal]);
+
   // Close modals on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -215,7 +235,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
   const bgPhoto = siteSettings?.campusImageUrl || siteSettings?.heroImageUrl;
 
   return (
-    <div className="relative min-h-[100dvh] w-full flex flex-col justify-between items-center py-4 px-4 sm:px-6 pb-12 bg-stone-950 select-none overflow-x-hidden">
+    <div className="relative min-h-[100dvh] w-full flex flex-col justify-between items-center py-3 sm:py-4 px-3 sm:px-6 pb-12 bg-stone-950 select-none overflow-x-clip overflow-y-auto overscroll-contain">
       {/* 🌟 Background Campus Image with Monastic Gradient & Ambient Atmospheric Animations */}
       <div className="fixed inset-0 w-full h-full pointer-events-none z-0 overflow-hidden bg-[#090807]">
         {bgPhoto ? (
@@ -260,16 +280,16 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
       </div>
 
       {/* 📱 TOP APP BAR: Clean Mobile Actions */}
-      <header className="w-full max-w-md z-20 flex items-center justify-between gap-2 shrink-0 pt-safe">
+      <header className="w-full max-w-md z-20 flex items-center justify-between gap-1 sm:gap-2 shrink-0 pt-safe">
         {/* Language Switcher Pill */}
-        <div className="flex items-center p-0.5 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 shadow-lg text-[11px] font-bold">
+        <div className="flex items-center p-0.5 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 shadow-lg text-[10.5px] sm:text-[11px] font-bold">
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               setLanguage('si');
             }}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1 ${
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1 leading-normal ${
               language === 'si'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-black shadow-xs'
                 : 'text-stone-300 hover:text-amber-200'
@@ -284,7 +304,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
               triggerHaptic('light');
               setLanguage('en');
             }}
-            className={`px-3 py-1.5 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1 ${
+            className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-all cursor-pointer active:scale-95 flex items-center gap-1 leading-none ${
               language === 'en'
                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 font-black shadow-xs'
                 : 'text-stone-300 hover:text-amber-200'
@@ -295,18 +315,18 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
         </div>
 
         {/* Right Actions: Dark/Light, Settings, Tour & Help */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               toggleTheme();
             }}
-            className="w-9 h-9 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
             title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
             aria-label="Toggle Theme"
           >
-            {isDarkMode ? <Sun className="w-4 h-4 text-amber-400 animate-icon-spin-slow" /> : <Moon className="w-4 h-4 text-amber-400 animate-icon-float" />}
+            {isDarkMode ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-icon-spin-slow" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-icon-float" />}
           </button>
 
           <button
@@ -315,11 +335,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
               triggerHaptic('light');
               setShowSettingsModal(true);
             }}
-            className="w-9 h-9 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
             title={isSi ? 'පද්ධති සැකසුම් (Settings)' : 'Settings'}
             aria-label="Settings"
           >
-            <Settings className="w-4 h-4 text-amber-400 hover:rotate-90 transition-transform duration-300" />
+            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 hover:rotate-90 transition-transform duration-300" />
           </button>
 
           <button
@@ -328,11 +348,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
               triggerHaptic('light');
               window.dispatchEvent(new CustomEvent('open-onboarding-modal'));
             }}
-            className="w-9 h-9 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
             title={isSi ? 'පද්ධති හැඳින්වීම සහ අවසර (Tour & Permissions)' : 'Tour & Permissions'}
             aria-label="Tour and Permissions"
           >
-            <Sparkles className="w-4 h-4 text-amber-400 animate-icon-sparkle" />
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-icon-sparkle" />
           </button>
 
           <button
@@ -341,11 +361,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
               triggerHaptic('light');
               setShowHelpModal(true);
             }}
-            className="w-9 h-9 rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] rounded-full bg-stone-900/80 backdrop-blur-xl border border-amber-400/30 text-amber-300 hover:text-amber-100 flex items-center justify-center transition cursor-pointer active:scale-90 shadow-md"
             title={isSi ? 'උපකාර' : 'Help'}
             aria-label="Help"
           >
-            <HelpCircle className="w-4 h-4 text-amber-400" />
+            <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
           </button>
         </div>
       </header>
@@ -355,7 +375,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onSuccess }) => {
         initial={{ opacity: 0, y: 20, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-md my-auto bg-stone-900/90 sm:bg-stone-900/85 backdrop-blur-2xl rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85)] border border-amber-400/30 p-5 sm:p-7 z-10 text-stone-100 overflow-hidden"
+        className="relative w-full max-w-md my-auto bg-stone-900/90 sm:bg-stone-900/85 backdrop-blur-2xl rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85)] border border-amber-400/30 p-4 sm:p-7 z-10 text-stone-100 overflow-hidden"
       >
         {/* Top Radiant Gold Accent Strip */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-600 via-amber-300 to-amber-600 shadow-[0_0_16px_rgba(245,158,11,0.75)]" />

@@ -211,7 +211,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
           <div className="h-1.5 bg-gradient-to-r from-purple-600 via-amber-500 to-indigo-600 shrink-0" />
 
           {/* Modal Header & Navigation Bar */}
-          <div className="border-b border-slate-200 dark:border-stone-800 p-5 space-y-3 shrink-0">
+          <div className="border-b border-slate-200 dark:border-stone-800 p-3.5 sm:p-5 space-y-2.5 sm:space-y-3 shrink-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h3 className="font-serif font-black text-lg text-slate-900 dark:text-stone-100 flex items-center gap-2">

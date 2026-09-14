@@ -237,7 +237,14 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
   // Connect modals & active exam view with Android back button stack
   useEffect(() => {
     if (activeExam) {
-      navigationHistoryManager.pushModal('active_exam', () => setActiveExam(null), 45);
+      navigationHistoryManager.pushModal(
+        'active_exam',
+        () => {
+          // Dispatch confirmation event to OnlineExamView instead of abruptly discarding progress
+          window.dispatchEvent(new CustomEvent('request-exam-exit-confirm'));
+        },
+        45
+      );
     } else {
       navigationHistoryManager.removeModal('active_exam');
     }

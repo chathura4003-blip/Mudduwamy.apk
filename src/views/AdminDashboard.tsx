@@ -174,6 +174,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   });
 
+  useEffect(() => {
+    if (isWelcomeModalOpen) {
+      navigationHistoryManager.pushModal('admin_welcome_modal', () => setIsWelcomeModalOpen(false), 20);
+    } else {
+      navigationHistoryManager.removeModal('admin_welcome_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_welcome_modal');
+  }, [isWelcomeModalOpen]);
+
   // Dynamic Confirm Modal State
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
@@ -815,6 +824,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const [selectedBackupPreview, setSelectedBackupPreview] = useState<BackupPreviewData | null>(null);
 
+  useEffect(() => {
+    if (selectedBackupPreview) {
+      navigationHistoryManager.pushModal('admin_backup_preview', () => setSelectedBackupPreview(null), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_backup_preview');
+    }
+    return () => navigationHistoryManager.removeModal('admin_backup_preview');
+  }, [selectedBackupPreview]);
+
   const fetchSystemStatus = async () => {
     try {
       const data = await settingsApi.getSystemStatus();
@@ -1277,6 +1295,15 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
   // Broadcast Notices State & Handlers
   const [broadcastNotices, setBroadcastNotices] = useState<any[]>([]);
   const [showNoticeModal, setShowNoticeModal] = useState(false);
+
+  useEffect(() => {
+    if (showNoticeModal) {
+      navigationHistoryManager.pushModal('admin_notice_modal', () => setShowNoticeModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_notice_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_notice_modal');
+  }, [showNoticeModal]);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [noticeForm, setNoticeForm] = useState<BroadcastNoticeFormState>({
     title: '',
@@ -1456,6 +1483,15 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   // Student Form & Modals State
   const [showStudentModal, setShowStudentModal] = useState(false);
+
+  useEffect(() => {
+    if (showStudentModal) {
+      navigationHistoryManager.pushModal('admin_student_modal', () => setShowStudentModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_student_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_student_modal');
+  }, [showStudentModal]);
   const [editingStudent, setEditingStudent] = useState<User | null>(null);
   const [studentFormStep, setStudentFormStep] = useState(1);
   const [studentForm, setStudentForm] = useState<StudentFormState>({
@@ -1691,6 +1727,15 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   // Teacher Form & Modal State
   const [showTeacherModal, setShowTeacherModal] = useState(false);
+
+  useEffect(() => {
+    if (showTeacherModal) {
+      navigationHistoryManager.pushModal('admin_teacher_modal', () => setShowTeacherModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_teacher_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_teacher_modal');
+  }, [showTeacherModal]);
   const [editingTeacher, setEditingTeacher] = useState<User | null>(null);
   const [teacherFormStep, setTeacherFormStep] = useState(1);
   const [teacherForm, setTeacherForm] = useState<TeacherFormState>({
@@ -1823,6 +1868,15 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   // Class Form & Modal State
   const [showClassModal, setShowClassModal] = useState(false);
+
+  useEffect(() => {
+    if (showClassModal) {
+      navigationHistoryManager.pushModal('admin_class_modal', () => setShowClassModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_class_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_class_modal');
+  }, [showClassModal]);
   const [editingClass, setEditingClass] = useState<PirivenaClass | null>(null);
   const [classForm, setClassForm] = useState<ClassFormState>({
     category: 'Mulika Pirivena',
@@ -1969,6 +2023,15 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   // Subject Form & Modal State
   const [showSubjectModal, setShowSubjectModal] = useState(false);
+
+  useEffect(() => {
+    if (showSubjectModal) {
+      navigationHistoryManager.pushModal('admin_subject_modal', () => setShowSubjectModal(false), 35);
+    } else {
+      navigationHistoryManager.removeModal('admin_subject_modal');
+    }
+    return () => navigationHistoryManager.removeModal('admin_subject_modal');
+  }, [showSubjectModal]);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [subjectForm, setSubjectForm] = useState<SubjectFormState>({
     code: '',
@@ -2314,7 +2377,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   return (
     <PullToRefreshWrapper onRefresh={handlePullRefresh} className="min-h-full">
-      <div className="min-h-full bg-stone-50/50 dark:bg-stone-950 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-12">
+      <div className="min-h-full w-full max-w-full overflow-x-clip bg-stone-50/50 dark:bg-stone-950 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-12">
         {/* Main Tab Content Container */}
         <div className="max-w-7xl mx-auto px-2 sm:px-8 pt-2 sm:pt-4">
           <div
