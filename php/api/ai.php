@@ -40,13 +40,6 @@ if (php_sapi_name() !== 'cli') {
     // 🛡️ Rate Limiting: Max 30 requests per minute per user/IP
     $clientIdentifier = !empty($authUser['id']) ? 'user_' . $authUser['id'] : 'ip_' . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
     try {
-        $db->exec("CREATE TABLE IF NOT EXISTS ai_rate_limits (
-            client_key VARCHAR(64) NOT NULL,
-            requests_count INT NOT NULL DEFAULT 1,
-            window_start DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (client_key)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
         $rlStmt = $db->prepare("SELECT requests_count, window_start FROM ai_rate_limits WHERE client_key = :k LIMIT 1");
         $rlStmt->execute(['k' => $clientIdentifier]);
         $rl = $rlStmt->fetch(PDO::FETCH_ASSOC);

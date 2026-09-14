@@ -85,13 +85,6 @@ if ($method === 'POST') {
     // 🛡️ Security Guard: Anti-Brute-Force Rate Limiting per IP Address
     $clientIp = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     try {
-        $db->exec("CREATE TABLE IF NOT EXISTS login_rate_limits (
-            ip_address VARCHAR(45) NOT NULL,
-            attempts INT NOT NULL DEFAULT 1,
-            last_attempt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (ip_address)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
         $stmtRL = $db->prepare("SELECT attempts, last_attempt FROM login_rate_limits WHERE ip_address = :ip LIMIT 1");
         $stmtRL->execute(['ip' => $clientIp]);
         $rlRow = $stmtRL->fetch(PDO::FETCH_ASSOC);

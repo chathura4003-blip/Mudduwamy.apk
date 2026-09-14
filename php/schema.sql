@@ -326,7 +326,7 @@ CREATE TABLE `teachers` (
   `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `joinedDate` date DEFAULT NULL,
   `token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '123456',
+  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -355,7 +355,7 @@ CREATE TABLE `students` (
   `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `joinedDate` date DEFAULT NULL,
   `token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '123456',
+  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -416,7 +416,7 @@ CREATE TABLE `users` (
   `classTeacherId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `monkStatus` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'monk',
   `token` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '123456',
+  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `classesAssigned` text COLLATE utf8mb4_unicode_ci,
   `subjectsTaught` text COLLATE utf8mb4_unicode_ci,
@@ -451,62 +451,10 @@ INSERT INTO `users` (
   NULL,
   NULL,
   NULL,
-  'admin123',
+  NULL,
   'active',
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 );
-
--- Teachers Table
-CREATE TABLE `teachers` (
-  `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `customId` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `monkName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `nic` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `qualifications` text COLLATE utf8mb4_unicode_ci,
-  `classesAssigned` text COLLATE utf8mb4_unicode_ci,
-  `subjectsTaught` text COLLATE utf8mb4_unicode_ci,
-  `categoriesTaught` text COLLATE utf8mb4_unicode_ci,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `joinedDate` date DEFAULT NULL,
-  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '123456',
-  `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_tch_custom_id` (`customId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Students Table
-CREATE TABLE `students` (
-  `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `customId` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `indexNumber` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `admissionNo` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `monkName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `classId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `pirivenaClass` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `phone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `guardianName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `guardianPhone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `emergencyContact` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `address` text COLLATE utf8mb4_unicode_ci,
-  `dateOfBirth` date DEFAULT NULL,
-  `enrolledSubjects` text COLLATE utf8mb4_unicode_ci,
-  `subjectsAssigned` text COLLATE utf8mb4_unicode_ci,
-  `status` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'active',
-  `joinedDate` date DEFAULT NULL,
-  `plain_password` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT '123456',
-  `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_std_custom_id` (`customId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

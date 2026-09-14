@@ -4,22 +4,8 @@ require_once __DIR__ . '/../config.php';
 $db = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Ensure table exists
+// Auto-seed initial system log if completely empty
 try {
-    $db->exec("CREATE TABLE IF NOT EXISTS `audit_logs` (
-        `id` VARCHAR(64) NOT NULL,
-        `userId` VARCHAR(64) DEFAULT NULL,
-        `userName` VARCHAR(255) DEFAULT NULL,
-        `actor` VARCHAR(255) DEFAULT NULL,
-        `action` VARCHAR(255) NOT NULL,
-        `details` TEXT DEFAULT NULL,
-        `ipAddress` VARCHAR(50) DEFAULT NULL,
-        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`),
-        INDEX idx_created (`created_at`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-
-    // Auto-seed initial system log if completely empty
     $count = $db->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
     if ($count == 0) {
         $initId = 'aud_init_' . time();
@@ -28,7 +14,7 @@ try {
         $stmtInit->execute(['id' => $initId]);
     }
 } catch (Exception $e) {
-    error_log("Audit logs table setup error: " . $e->getMessage());
+    error_log("Audit logs check error: " . $e->getMessage());
 }
 
 // 1. GET Audit Logs

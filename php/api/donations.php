@@ -151,24 +151,7 @@ if ($method === 'POST') {
         ]);
         $insertSuccess = true;
     } catch (Exception $eFirst) {
-        // Self-heal table schema on live server if columns were missing
-        $repairCols = [
-            "ALTER TABLE donations ADD COLUMN contactPhone VARCHAR(50) DEFAULT NULL",
-            "ALTER TABLE donations ADD COLUMN amountOrItems VARCHAR(255) DEFAULT NULL",
-            "ALTER TABLE donations ADD COLUMN type VARCHAR(255) DEFAULT 'පිරිවෙන් සංවර්ධන අරමුදල'",
-            "ALTER TABLE donations ADD COLUMN slipUrl MEDIUMTEXT DEFAULT NULL",
-            "ALTER TABLE donations ADD COLUMN slipFileName VARCHAR(255) DEFAULT NULL",
-            "ALTER TABLE donations ADD COLUMN dedicationWish TEXT DEFAULT NULL",
-            "ALTER TABLE donations MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'",
-            "ALTER TABLE donations MODIFY COLUMN receiptUrl MEDIUMTEXT DEFAULT NULL"
-        ];
-        foreach ($repairCols as $sqlRepair) {
-            try {
-                @$db->exec($sqlRepair);
-            } catch (Exception $eRep) {}
-        }
-
-        // Retry Full Insert
+        // Fallback to basic columns insert if extended schema has column discrepancies
         try {
             $stmt = $db->prepare("INSERT INTO donations (id, receiptId, donorName, donorPhone, contactPhone, donorEmail, amount, amountOrItems, cause, type, receiptUrl, slipUrl, slipFileName, dedicationWish, isAnonymous, date, status) 
                 VALUES (:id, :rec, :name, :phone, :cphone, :email, :amt, :amtitems, :cause, :type, :rurl, :surl, :sfilename, :wish, :anon, :pdate, :st)

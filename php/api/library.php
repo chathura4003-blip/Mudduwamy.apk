@@ -99,24 +99,7 @@ if ($method === 'POST') {
             'acp' => $copies
         ]);
     } catch (Exception $ePost) {
-        try {
-            @$db->exec("ALTER TABLE library ADD COLUMN fileUrl VARCHAR(500) DEFAULT NULL");
-            @$db->exec("ALTER TABLE library ADD COLUMN pdfUrl VARCHAR(500) DEFAULT NULL");
-            @$db->exec("ALTER TABLE library ADD COLUMN sectionLevel VARCHAR(50) DEFAULT 'All'");
-            @$db->exec("ALTER TABLE library ADD COLUMN availableCopies INT DEFAULT 1");
-
-            $stmt = $db->prepare("INSERT INTO library (id, title, titleSinhala, category, fileUrl, author) VALUES (:id, :t, :tsi, :cat, :furl, :auth)");
-            $stmt->execute([
-                'id' => $id,
-                't' => $title,
-                'tsi' => $titleSinhala,
-                'cat' => $category,
-                'furl' => $pdfUrl,
-                'auth' => $author
-            ]);
-        } catch (Exception $eRetry) {
-            sendJsonResponse(["error" => "Failed to save resource: " . $eRetry->getMessage()], 500);
-        }
+        sendJsonResponse(["error" => "Failed to save resource: " . $ePost->getMessage()], 500);
     }
 
     logAuditEvent("පුස්තකාල ග්‍රන්ථයක් එක් කිරීම (Library Resource Added)", "ග්‍රන්ථය: '{$titleSinhala}' සාර්ථකව පද්ධතියට එක් කරන ලදී.", 'Library');

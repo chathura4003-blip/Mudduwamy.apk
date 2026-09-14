@@ -6,49 +6,7 @@
 
 require_once __DIR__ . '/../config.php';
 
-// Ensure table exists
-function ensureChatTableExists($pdo) {
-    if (!$pdo) return;
-    try {
-        $sql = "CREATE TABLE IF NOT EXISTS chat_messages (
-            id VARCHAR(64) PRIMARY KEY,
-            room_id VARCHAR(64) NOT NULL DEFAULT 'general',
-            sender_id VARCHAR(64) NOT NULL,
-            sender_name VARCHAR(255) NOT NULL,
-            sender_role VARCHAR(32) NOT NULL,
-            sender_avatar TEXT NULL,
-            message_type VARCHAR(32) NOT NULL DEFAULT 'text',
-            content TEXT NOT NULL,
-            attachment_url TEXT NULL,
-            attachment_name VARCHAR(255) NULL,
-            attachment_size VARCHAR(64) NULL,
-            reactions TEXT NULL,
-            reply_to_id VARCHAR(64) NULL,
-            reply_to_name VARCHAR(255) NULL,
-            reply_to_content TEXT NULL,
-            is_pinned TINYINT(1) NOT NULL DEFAULT 0,
-            created_at DATETIME NOT NULL,
-            expires_at DATETIME NOT NULL,
-            INDEX idx_room (room_id),
-            INDEX idx_created (created_at),
-            INDEX idx_expires (expires_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-        $pdo->exec($sql);
-
-        // Auto-migrate columns if table already existed without them
-        try {
-            $pdo->exec("ALTER TABLE chat_messages ADD COLUMN reply_to_id VARCHAR(64) NULL AFTER reactions");
-        } catch (Throwable $ign) {}
-        try {
-            $pdo->exec("ALTER TABLE chat_messages ADD COLUMN reply_to_name VARCHAR(255) NULL AFTER reply_to_id");
-        } catch (Throwable $ign) {}
-        try {
-            $pdo->exec("ALTER TABLE chat_messages ADD COLUMN reply_to_content TEXT NULL AFTER reply_to_name");
-        } catch (Throwable $ign) {}
-    } catch (Throwable $e) {
-        error_log("Failed to ensure chat_messages table: " . $e->getMessage());
-    }
-}
+// Schema managed via php/migrations/005_auxiliary_tables.sql
 
 // Auto-purge messages older than 24 hours (unless pinned)
 function autoPurgeExpiredChatMessages($pdo) {
@@ -150,8 +108,6 @@ if ($method === 'GET') {
             "messages" => $formatted
         ]);
     } catch (Throwable $e) {
-        // Auto-create table if missing and return empty list cleanly
-        ensureChatTableExists($pdo);
         sendJsonResponse([
             "room_id" => $roomId,
             "count" => 0,
@@ -165,7 +121,6 @@ if ($method === 'GET') {
 // -------------------------------------------------------------------------
 if ($method === 'POST') {
     $authUser = requireAuth();
-    ensureChatTableExists($pdo);
 
     $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
