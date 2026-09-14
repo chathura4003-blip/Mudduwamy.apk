@@ -14,29 +14,7 @@ if (count($parts) > 0) {
     }
 }
 
-// Ensure classes table structure
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS `classes` (
-        `id` VARCHAR(64) NOT NULL,
-        `code` VARCHAR(50) DEFAULT NULL,
-        `roomNumber` VARCHAR(100) DEFAULT 'දේශන ශාලාව 01',
-        `className` VARCHAR(100) NOT NULL,
-        `classNameSinhala` VARCHAR(100) NOT NULL,
-        `gradeLevel` VARCHAR(50) NOT NULL,
-        `classTeacher` VARCHAR(255) DEFAULT NULL,
-        `studentCount` INT DEFAULT 0,
-        `academicYear` VARCHAR(20) DEFAULT '2025/2026',
-        `subjects` LONGTEXT DEFAULT NULL,
-        `timetable` LONGTEXT DEFAULT NULL,
-        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-} catch (Exception $e) {}
-
-// Auto migrate timetable column if missing
-try {
-    @$db->exec("ALTER TABLE `classes` ADD COLUMN `timetable` LONGTEXT DEFAULT NULL");
-} catch (Exception $eCol) {}
+// Classes table schema managed by php/migrations/
 
 // Helper to format class records for React UI
 function formatClassRecord($c) {
@@ -101,7 +79,7 @@ if ($method === 'GET') {
 
 // 2. POST Class
 if ($method === 'POST') {
-    $authUser = requireRole(['admin', 'superadmin', 'teacher']);
+    $authUser = requireRole(['admin', 'superadmin']);
     $body = getRequestBody();
     $id = isset($body['id']) && !empty($body['id']) ? trim($body['id']) : 'cls-' . time() . '-' . rand(100, 999);
     $code = isset($body['code']) && !empty($body['code']) ? trim($body['code']) : strtoupper(str_replace('cls-', 'CLS-', $id));
@@ -148,41 +126,8 @@ if ($method === 'POST') {
             'tt' => $timetable
         ]);
     } catch (Exception $ePost) {
-        // Self-heal table schema on live server if columns were missing
-        try {
-            @$db->exec("ALTER TABLE classes ADD COLUMN code VARCHAR(50) DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN roomNumber VARCHAR(100) DEFAULT 'දේශන ශාලාව 01'");
-            @$db->exec("ALTER TABLE classes ADD COLUMN subjects LONGTEXT DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN timetable LONGTEXT DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN classNameSinhala VARCHAR(100) DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN classTeacher VARCHAR(255) DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN studentCount INT DEFAULT 0");
-            @$db->exec("ALTER TABLE classes ADD COLUMN academicYear VARCHAR(20) DEFAULT '2025/2026'");
-
-            $stmt = $db->prepare("INSERT INTO classes (id, code, roomNumber, className, classNameSinhala, gradeLevel, classTeacher, studentCount, academicYear, subjects, timetable) 
-                VALUES (:id, :code, :rn, :cn, :cns, :gl, :ct, :sc, :ay, :subjs, :tt)
-                ON DUPLICATE KEY UPDATE 
-                    className = VALUES(className), 
-                    classNameSinhala = VALUES(classNameSinhala), 
-                    gradeLevel = VALUES(gradeLevel),
-                    timetable = VALUES(timetable)");
-            $stmt->execute([
-                'id' => $id,
-                'code' => $code,
-                'rn' => $roomNumber,
-                'cn' => $className,
-                'cns' => $classNameSinhala,
-                'gl' => $gradeLevel,
-                'ct' => $classTeacher,
-                'sc' => $studentCount,
-                'ay' => $academicYear,
-                'subjs' => $subjects,
-                'tt' => $timetable
-            ]);
-        } catch (Exception $eRetry) {
-            error_log("Failed to insert class: " . $eRetry->getMessage());
-            sendJsonResponse(["error" => "Failed to save class: " . $eRetry->getMessage()], 500);
-        }
+        error_log("Failed to insert class: " . $ePost->getMessage());
+        sendJsonResponse(["error" => "Failed to save class: " . $ePost->getMessage()], 500);
     }
 
     logAuditEvent("නව පන්තියක් එක් කිරීම (Class Added)", "පන්තිය: '{$classNameSinhala}' ({$code}) සාර්ථකව පද්ධතියට එක් කරන ලදී.", 'Academic');
@@ -226,6 +171,29 @@ if ($method === 'PUT' || $method === 'PATCH') {
         sendJsonResponse(["error" => "Class not found"], 404);
     }
 
+    // Role check: Teachers can ONLY update timetable for their assigned classes
+    if (($authUser['role'] ?? '') === 'teacher') {
+        $tId = $authUser['id'] ?? '';
+        $tCid = $authUser['customId'] ?? $tId;
+        $tName = $authUser['name'] ?? '';
+        $tMonk = $authUser['monkName'] ?? '';
+
+        $isAssigned = ($existing['classTeacher'] === $tId || $existing['classTeacher'] === $tCid || $existing['classTeacher'] === $tName || $existing['classTeacher'] === $tMonk);
+        if (!$isAssigned) {
+            $chkStmt = $db->prepare("SELECT COUNT(*) FROM teacher_assignments WHERE (teacher_id = :t1 OR teacher_id = :t2) AND class_id = :cid");
+            $chkStmt->execute(['t1' => $tId, 't2' => $tCid, 'cid' => $classId]);
+            if ($chkStmt->fetchColumn() > 0) {
+                $isAssigned = true;
+            }
+        }
+        if (!$isAssigned) {
+            sendJsonResponse(["error" => "Forbidden: You are not assigned to this class."], 403);
+        }
+
+        // Only allow timetable update for teacher
+        $body = ['timetable' => $body['timetable'] ?? $existing['timetable']];
+    }
+
     $code = array_key_exists('code', $body) && !empty($body['code']) ? trim($body['code']) : ($existing['code'] ?? 'CLS-001');
     $roomNumber = array_key_exists('roomNumber', $body) && !empty($body['roomNumber']) ? trim($body['roomNumber']) : ($existing['roomNumber'] ?? 'දේශන ශාලාව 01');
     $className = isset($body['className']) ? trim($body['className']) : (isset($body['name']) ? trim($body['name']) : $existing['className']);
@@ -266,23 +234,8 @@ if ($method === 'PUT' || $method === 'PATCH') {
             'tt' => $timetable
         ]);
     } catch (Exception $ePut) {
-        try {
-            @$db->exec("ALTER TABLE classes ADD COLUMN code VARCHAR(50) DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN roomNumber VARCHAR(100) DEFAULT 'දේශන ශාලාව 01'");
-            @$db->exec("ALTER TABLE classes ADD COLUMN subjects LONGTEXT DEFAULT NULL");
-            @$db->exec("ALTER TABLE classes ADD COLUMN timetable LONGTEXT DEFAULT NULL");
-            
-            $stmt = $db->prepare("UPDATE classes SET className = :cn, classNameSinhala = :cns, gradeLevel = :gl, timetable = :tt WHERE id = :id");
-            $stmt->execute([
-                'id' => $classId,
-                'cn' => $className,
-                'cns' => $classNameSinhala,
-                'gl' => $gradeLevel,
-                'tt' => $timetable
-            ]);
-        } catch (Exception $eRetry) {
-            sendJsonResponse(["error" => "Failed to update class"], 500);
-        }
+        error_log("Failed to update class: " . $ePut->getMessage());
+        sendJsonResponse(["error" => "Failed to update class"], 500);
     }
 
     logAuditEvent("පන්ති තොරතුරු යාවත්කාලීන කිරීම (Class Updated)", "පන්තිය: '{$classNameSinhala}' ({$code}) තොරතුරු යාවත්කාලීන කරන ලදී.", 'Academic');

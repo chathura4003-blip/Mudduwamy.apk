@@ -12,67 +12,7 @@ if (preg_match('#/api/(?:materials|study-materials)/([^/]+)$#', $requestUri, $ma
     $materialId = urldecode($matches[1]);
 }
 
-/**
- * Ensure study_materials table and all required columns exist across all MySQL / MariaDB versions
- */
-function ensureMaterialsTable($db) {
-    try {
-        $db->exec("CREATE TABLE IF NOT EXISTS `study_materials` (
-            `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `titleSinhala` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `subject` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `subjectId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `gradeClass` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'All',
-            `classId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `fileUrl` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `fileName` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `fileType` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'pdf',
-            `type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'pdf',
-            `fileSize` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `description` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `uploadedBy` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'ආචාර්ය මණ්ඩලය',
-            `uploadedByTeacherId` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `dateUploaded` date DEFAULT NULL,
-            `uploadedAt` datetime DEFAULT NULL,
-            `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-        // Fetch existing columns
-        $stmtCols = $db->query("SHOW COLUMNS FROM `study_materials`");
-        $existingCols = array_map('strtolower', $stmtCols->fetchAll(PDO::FETCH_COLUMN));
-
-        $requiredCols = [
-            'titlesinhala' => "ALTER TABLE `study_materials` ADD COLUMN `titleSinhala` VARCHAR(255) DEFAULT NULL",
-            'subjectid' => "ALTER TABLE `study_materials` ADD COLUMN `subjectId` VARCHAR(64) DEFAULT NULL",
-            'gradeclass' => "ALTER TABLE `study_materials` ADD COLUMN `gradeClass` VARCHAR(50) DEFAULT 'All'",
-            'classid' => "ALTER TABLE `study_materials` ADD COLUMN `classId` VARCHAR(64) DEFAULT NULL",
-            'filename' => "ALTER TABLE `study_materials` ADD COLUMN `fileName` VARCHAR(255) DEFAULT NULL",
-            'filetype' => "ALTER TABLE `study_materials` ADD COLUMN `fileType` VARCHAR(50) DEFAULT 'pdf'",
-            'type' => "ALTER TABLE `study_materials` ADD COLUMN `type` VARCHAR(50) DEFAULT 'pdf'",
-            'filesize' => "ALTER TABLE `study_materials` ADD COLUMN `fileSize` VARCHAR(50) DEFAULT NULL",
-            'description' => "ALTER TABLE `study_materials` ADD COLUMN `description` TEXT DEFAULT NULL",
-            'uploadedby' => "ALTER TABLE `study_materials` ADD COLUMN `uploadedBy` VARCHAR(255) DEFAULT 'ආචාර්ය මණ්ඩලය'",
-            'uploadedbyteacherid' => "ALTER TABLE `study_materials` ADD COLUMN `uploadedByTeacherId` VARCHAR(64) DEFAULT NULL",
-            'dateuploaded' => "ALTER TABLE `study_materials` ADD COLUMN `dateUploaded` DATE DEFAULT NULL",
-            'uploadedat' => "ALTER TABLE `study_materials` ADD COLUMN `uploadedAt` DATETIME DEFAULT NULL",
-            'created_at' => "ALTER TABLE `study_materials` ADD COLUMN `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP",
-        ];
-
-        foreach ($requiredCols as $colKey => $sql) {
-            if (!in_array($colKey, $existingCols)) {
-                try {
-                    $db->exec($sql);
-                } catch (Exception $eCol) {}
-            }
-        }
-    } catch (Exception $e) {}
-}
-
-if ($method !== 'GET') {
-    ensureMaterialsTable($db);
-}
+// Database schema managed cleanly by php/migrations/
 
 function formatMaterial($row) {
     if (!$row) return null;
@@ -256,6 +196,14 @@ if ($method === 'POST') {
     $description = trim($body['description'] ?? '');
     $dateUploaded = !empty($body['dateUploaded']) ? trim($body['dateUploaded']) : date('Y-m-d');
     $now = date('Y-m-d H:i:s');
+
+    // Authoritative RBAC check: teacher must be assigned to target class & subject
+    if (($authUser['role'] ?? '') === 'teacher') {
+        if ($classId !== 'all' && $classId !== 'ALL' && $subjectId !== 'all' && $subjectId !== 'ALL') {
+            requireTeacherAssignment($authUser, $classId, $subjectId, $db);
+        }
+        $teacherId = $authUser['id'] ?? $teacherId;
+    }
     
     try {
         // Detect existing columns in study_materials
@@ -330,6 +278,23 @@ if ($method === 'POST') {
 if ($method === 'PUT' && $materialId) {
     $authUser = requireRole(['teacher', 'admin', 'superadmin']);
     $body = getRequestBody();
+
+    $stmtSel = $db->prepare("SELECT * FROM study_materials WHERE id = :id LIMIT 1");
+    $stmtSel->execute(['id' => $materialId]);
+    $existing = $stmtSel->fetch();
+
+    if (!$existing) {
+        sendJsonResponse(["error" => "Material not found"], 404);
+    }
+
+    if (($authUser['role'] ?? '') === 'teacher') {
+        $tId = $authUser['id'] ?? '';
+        $tCid = $authUser['customId'] ?? $tId;
+        $uploadedBy = $existing['uploadedByTeacherId'] ?? ($existing['uploadedBy'] ?? '');
+        if ($uploadedBy !== $tId && $uploadedBy !== $tCid) {
+            requireTeacherAssignment($authUser, $existing['classId'], $existing['subjectId'], $db);
+        }
+    }
     
     $fields = [];
     $params = ['id' => $materialId];
@@ -357,21 +322,33 @@ if ($method === 'PUT' && $materialId) {
     $newStmt->execute(['id' => $materialId]);
     $row = $newStmt->fetch();
     
-    if (!$row) {
-        sendJsonResponse(["error" => "Material not found"], 404);
-    }
     sendJsonResponse(formatMaterial($row));
 }
 
 // DELETE Material
 if ($method === 'DELETE' && $materialId) {
     $authUser = requireRole(['teacher', 'admin', 'superadmin']);
+
+    $stmtSel = $db->prepare("SELECT * FROM study_materials WHERE id = :id LIMIT 1");
+    $stmtSel->execute(['id' => $materialId]);
+    $existing = $stmtSel->fetch();
+
+    if (!$existing) {
+        sendJsonResponse(["error" => "Material not found"], 404);
+    }
+
+    if (($authUser['role'] ?? '') === 'teacher') {
+        $tId = $authUser['id'] ?? '';
+        $tCid = $authUser['customId'] ?? $tId;
+        $uploadedBy = $existing['uploadedByTeacherId'] ?? ($existing['uploadedBy'] ?? '');
+        if ($uploadedBy !== $tId && $uploadedBy !== $tCid) {
+            requireTeacherAssignment($authUser, $existing['classId'], $existing['subjectId'], $db);
+        }
+    }
+
     try {
-        $stmtSel = $db->prepare("SELECT fileUrl FROM study_materials WHERE id = :id LIMIT 1");
-        $stmtSel->execute(['id' => $materialId]);
-        $mat = $stmtSel->fetch();
-        if ($mat && !empty($mat['fileUrl'])) {
-            deleteUploadedFile($mat['fileUrl']);
+        if (!empty($existing['fileUrl'])) {
+            deleteUploadedFile($existing['fileUrl']);
         }
     } catch (Exception $e) {}
 

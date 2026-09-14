@@ -282,9 +282,11 @@ if ($method === 'GET') {
     }
 
     $isAdmin = in_array($authUser['role'] ?? '', ['admin', 'superadmin']);
-    $roleFilter = isset($_GET['role']) ? trim($_GET['role']) : null;
-
     if ($pathId) {
+        if (($authUser['role'] ?? '') === 'student') {
+            requireStudentOwnership($authUser, $pathId);
+        }
+
         $cleanId = trim($pathId);
         $candidates = [$cleanId, urldecode($cleanId)];
         if (strpos(strtolower($cleanId), 'std-') === 0) {
@@ -360,6 +362,7 @@ if ($method === 'GET') {
             sendJsonResponse([formatUserRecord($authUser, $db)]);
         }
 
+        $roleFilter = isset($_GET['role']) ? trim($_GET['role']) : null;
         $query = "SELECT * FROM users";
         $params = [];
 
@@ -735,6 +738,25 @@ if ($method === 'PUT' || $method === 'PATCH') {
             'error' => 'ඔබට වෙනත් පරිශීලකයින්ගේ ගිණුම් සංස්කරණය කිරීමට අවසර නොමැත (Forbidden: Cannot edit another user).',
             'code' => 'FORBIDDEN'
         ], 403);
+    }
+
+    // Security Guard: Non-admins cannot alter their role, status, or academic assignments
+    if (!$isAdmin) {
+        unset(
+            $body['role'],
+            $body['status'],
+            $body['classesAssigned'],
+            $body['assignedClasses'],
+            $body['subjectsTaught'],
+            $body['assignedSubjects'],
+            $body['categoriesTaught'],
+            $body['teacherAssignments'],
+            $body['classId'],
+            $body['pirivenaClass'],
+            $body['subjectsAssigned'],
+            $body['customId'],
+            $body['indexNumber']
+        );
     }
 
     // Lookup user by id, customId, or indexNumber

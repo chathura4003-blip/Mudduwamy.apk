@@ -155,6 +155,18 @@ if ($method === 'PUT') {
         sendJsonResponse(["error" => "Notice not found"], 404);
     }
 
+    if (($authUser['role'] ?? '') === 'teacher') {
+        $tKeys = array_filter([
+            $authUser['id'] ?? '',
+            $authUser['customId'] ?? '',
+            $authUser['name'] ?? '',
+            $authUser['monkName'] ?? ''
+        ]);
+        if (!in_array($existing['createdBy'], $tKeys)) {
+            sendJsonResponse(["error" => "Forbidden: You can only edit broadcast notices created by you."], 403);
+        }
+    }
+
     $title = isset($body['title']) ? trim($body['title']) : $existing['title'];
     $titleSinhala = isset($body['titleSinhala']) ? trim($body['titleSinhala']) : $existing['titleSinhala'];
     $message = isset($body['message']) ? trim($body['message']) : $existing['message'];

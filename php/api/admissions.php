@@ -4,78 +4,7 @@ require_once __DIR__ . '/../config.php';
 $db = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Ensure admissions table exists with all required fields
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS `admissions` (
-      `id` VARCHAR(64) NOT NULL PRIMARY KEY,
-      `trackingId` VARCHAR(50) NOT NULL,
-      `fullName` VARCHAR(255) DEFAULT NULL,
-      `applicantName` VARCHAR(255) DEFAULT NULL,
-      `titlePrefix` VARCHAR(50) DEFAULT 'පූජ්‍ය',
-      `monkStatus` VARCHAR(50) DEFAULT 'monk',
-      `monkName` VARCHAR(255) DEFAULT NULL,
-      `dob` VARCHAR(50) DEFAULT NULL,
-      `calculatedAge` INT DEFAULT NULL,
-      `guardianName` VARCHAR(255) DEFAULT NULL,
-      `guardianPhone` VARCHAR(50) DEFAULT NULL,
-      `guardianRelation` VARCHAR(100) DEFAULT NULL,
-      `guardianAddress` TEXT DEFAULT NULL,
-      `phone` VARCHAR(50) DEFAULT NULL,
-      `whatsappPhone` VARCHAR(50) DEFAULT NULL,
-      `email` VARCHAR(255) DEFAULT NULL,
-      `address` TEXT DEFAULT NULL,
-      `district` VARCHAR(100) DEFAULT 'Ratnapura (රත්නපුර)',
-      `templeName` VARCHAR(255) DEFAULT NULL,
-      `nikayaChapter` VARCHAR(255) DEFAULT NULL,
-      `previousSchool` VARCHAR(255) DEFAULT NULL,
-      `gradeApplying` VARCHAR(100) DEFAULT NULL,
-      `appliedClass` VARCHAR(255) DEFAULT NULL,
-      `hostelRequired` VARCHAR(50) DEFAULT 'yes',
-      `nicOrBirthCert` VARCHAR(100) DEFAULT NULL,
-      `specialTalents` TEXT DEFAULT NULL,
-      `additionalNotes` TEXT DEFAULT NULL,
-      `payloadJson` LONGTEXT DEFAULT NULL,
-      `status` VARCHAR(50) DEFAULT 'pending',
-      `submittedDate` DATE DEFAULT NULL,
-      `dateSubmitted` DATE DEFAULT NULL,
-      `notes` TEXT DEFAULT NULL,
-      `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY `idx_tracking_id` (`trackingId`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-
-    // Dynamic auto-migration for existing tables
-    $columnsNeeded = [
-        'applicantName' => 'VARCHAR(255) DEFAULT NULL',
-        'titlePrefix' => "VARCHAR(50) DEFAULT 'පූජ්‍ය'",
-        'monkStatus' => "VARCHAR(50) DEFAULT 'monk'",
-        'dob' => 'VARCHAR(50) DEFAULT NULL',
-        'calculatedAge' => 'INT DEFAULT NULL',
-        'guardianPhone' => 'VARCHAR(50) DEFAULT NULL',
-        'guardianRelation' => 'VARCHAR(100) DEFAULT NULL',
-        'guardianAddress' => 'TEXT DEFAULT NULL',
-        'whatsappPhone' => 'VARCHAR(50) DEFAULT NULL',
-        'district' => "VARCHAR(100) DEFAULT 'Ratnapura (රත්නපුර)'",
-        'templeName' => 'VARCHAR(255) DEFAULT NULL',
-        'nikayaChapter' => 'VARCHAR(255) DEFAULT NULL',
-        'previousSchool' => 'VARCHAR(255) DEFAULT NULL',
-        'appliedClass' => 'VARCHAR(255) DEFAULT NULL',
-        'hostelRequired' => "VARCHAR(50) DEFAULT 'yes'",
-        'nicOrBirthCert' => 'VARCHAR(100) DEFAULT NULL',
-        'specialTalents' => 'TEXT DEFAULT NULL',
-        'additionalNotes' => 'TEXT DEFAULT NULL',
-        'payloadJson' => 'LONGTEXT DEFAULT NULL',
-        'submittedDate' => 'DATE DEFAULT NULL',
-    ];
-
-    foreach ($columnsNeeded as $col => $colDef) {
-        try {
-            $check = $db->query("SHOW COLUMNS FROM `admissions` LIKE '$col'");
-            if (!$check || $check->rowCount() === 0) {
-                @$db->exec("ALTER TABLE `admissions` ADD COLUMN `$col` $colDef");
-            }
-        } catch (Exception $e) {}
-    }
-} catch (Exception $e) {}
+// Admissions table schema managed by php/migrations/
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $parts = array_values(array_filter(explode('/', trim($requestUri, '/'))));

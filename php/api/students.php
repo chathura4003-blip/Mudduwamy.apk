@@ -114,6 +114,10 @@ if ($method === 'GET') {
     $search = isset($_GET['search']) ? trim($_GET['search']) : null;
 
     if ($pathId) {
+        if (($authUser['role'] ?? '') === 'student') {
+            requireStudentOwnership($authUser, $pathId);
+        }
+
         $uStmt = $db->prepare("SELECT * FROM users WHERE (id = :id1 OR customId = :id2 OR indexNumber = :id3) AND role = 'student' LIMIT 1");
         $uStmt->execute(['id1' => $pathId, 'id2' => $pathId, 'id3' => $pathId]);
         $student = $uStmt->fetch();
@@ -133,6 +137,11 @@ if ($method === 'GET') {
             sendJsonResponse(["error" => "Student not found"], 404);
         }
     } else {
+        // Enforce student ownership: students can only see their own profile
+        if (($authUser['role'] ?? '') === 'student') {
+            sendJsonResponse([formatStudentRecord($authUser, $db)]);
+        }
+
         // Query users table as primary source of student records
         $uQuery = "SELECT * FROM users WHERE role = 'student'";
         $uParams = [];
@@ -345,45 +354,7 @@ if ($method === 'POST') {
             'avatar' => $avatar
         ]);
     } catch (Exception $eStud) {
-        try {
-            @$db->exec("CREATE TABLE IF NOT EXISTS `students` (
-                `id` VARCHAR(64) PRIMARY KEY,
-                `customId` VARCHAR(100) DEFAULT NULL,
-                `indexNumber` VARCHAR(100) DEFAULT NULL,
-                `admissionNo` VARCHAR(100) DEFAULT NULL,
-                `name` VARCHAR(255) NOT NULL,
-                `monkName` VARCHAR(255) DEFAULT NULL,
-                `classId` VARCHAR(64) DEFAULT NULL,
-                `pirivenaClass` VARCHAR(100) DEFAULT NULL,
-                `email` VARCHAR(255) DEFAULT NULL,
-                `phone` VARCHAR(50) DEFAULT NULL,
-                `guardianName` VARCHAR(255) DEFAULT NULL,
-                `guardianPhone` VARCHAR(50) DEFAULT NULL,
-                `emergencyContact` VARCHAR(50) DEFAULT NULL,
-                `address` TEXT DEFAULT NULL,
-                `dateOfBirth` DATE DEFAULT NULL,
-                `enrolledSubjects` TEXT DEFAULT NULL,
-                `subjectsAssigned` TEXT DEFAULT NULL,
-                `status` VARCHAR(50) DEFAULT 'active',
-                `joinedDate` DATE DEFAULT NULL,
-                `plain_password` VARCHAR(255) DEFAULT '123456',
-                `avatar` VARCHAR(500) DEFAULT NULL,
-                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            $stmt = $db->prepare("INSERT INTO students (id, customId, name, classId, status, plain_password) 
-                VALUES (:id, :cid, :name, :cls, :status, NULL)
-                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = NULL");
-            $stmt->execute([
-                'id' => $id,
-                'cid' => $customId,
-                'name' => $name,
-                'cls' => $classId,
-                'status' => $status
-            ]);
-        } catch (Exception $eRetry) {
-            error_log("Failed to insert student: " . $eRetry->getMessage());
-        }
+        error_log("Failed to insert student into students table: " . $eStud->getMessage());
     }
 
     // Sync to users table for unified login
@@ -455,7 +426,13 @@ if ($method === 'PUT') {
         sendJsonResponse(["error" => "Student ID is required"], 400);
     }
 
-    if (!$isAdminOrTeacher && $authUser['id'] !== $pathId && ($authUser['customId'] ?? '') !== $pathId) {
+    $body = getRequestBody();
+
+    if (($authUser['role'] ?? '') === 'student') {
+        requireStudentOwnership($authUser, $pathId);
+        // Student cannot modify academic, status, enrollment, or identification fields
+        unset($body['classId'], $body['pirivenaClass'], $body['status'], $body['enrolledSubjects'], $body['subjectsAssigned'], $body['admissionNo'], $body['customId'], $body['indexNumber'], $body['role']);
+    } elseif (!$isAdminOrTeacher && $authUser['id'] !== $pathId && ($authUser['customId'] ?? '') !== $pathId) {
         sendJsonResponse([
             'success' => false,
             'error' => 'ඔබට වෙනත් සිසුවෙකුගේ තොරතුරු සංස්කරණය කිරීමට අවසර නොමැත (Forbidden).',
@@ -463,7 +440,6 @@ if ($method === 'PUT') {
         ], 403);
     }
 
-    $body = getRequestBody();
     $updates = [];
     $params = ['id' => $pathId];
 

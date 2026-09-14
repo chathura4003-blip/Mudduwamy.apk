@@ -232,40 +232,7 @@ if ($method === 'POST') {
             'avatar' => $avatar
         ]);
     } catch (Exception $eTeach) {
-        try {
-            @$db->exec("CREATE TABLE IF NOT EXISTS `teachers` (
-                `id` VARCHAR(64) PRIMARY KEY,
-                `customId` VARCHAR(100) DEFAULT NULL,
-                `name` VARCHAR(255) NOT NULL,
-                `monkName` VARCHAR(255) DEFAULT NULL,
-                `email` VARCHAR(255) DEFAULT NULL,
-                `phone` VARCHAR(50) DEFAULT NULL,
-                `nic` VARCHAR(100) DEFAULT NULL,
-                `qualifications` VARCHAR(255) DEFAULT NULL,
-                `classesAssigned` TEXT DEFAULT NULL,
-                `subjectsTaught` TEXT DEFAULT NULL,
-                `categoriesTaught` TEXT DEFAULT NULL,
-                `status` VARCHAR(50) DEFAULT 'active',
-                `joinedDate` DATE DEFAULT NULL,
-                `plain_password` VARCHAR(255) DEFAULT '123456',
-                `avatar` VARCHAR(500) DEFAULT NULL,
-                `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-            $stmt = $db->prepare("INSERT INTO teachers (id, customId, name, email, phone, status, plain_password) 
-                VALUES (:id, :cid, :name, :email, :phone, :status, NULL)
-                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = NULL");
-            $stmt->execute([
-                'id' => $id,
-                'cid' => $customId,
-                'name' => $name,
-                'email' => $email,
-                'phone' => $phone,
-                'status' => $status
-            ]);
-        } catch (Exception $eRetry) {
-            error_log("Failed to insert teacher: " . $eRetry->getMessage());
-        }
+        error_log("Failed to insert teacher into teachers table: " . $eTeach->getMessage());
     }
 
     // Also sync with users table for unified login
@@ -347,6 +314,11 @@ if ($method === 'PUT') {
     }
 
     $body = getRequestBody();
+
+    if (!$isAdmin) {
+        unset($body['classesAssigned'], $body['assignedClasses'], $body['subjectsTaught'], $body['assignedSubjects'], $body['categoriesTaught'], $body['teacherAssignments'], $body['status'], $body['role']);
+    }
+
     $updates = [];
     $params = ['id' => $pathId];
 

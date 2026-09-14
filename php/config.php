@@ -957,6 +957,135 @@ function requireRole($allowedRoles = ['admin', 'superadmin']) {
 }
 
 /**
+ * Check if a teacher is assigned to a specific class and subject
+ * Uses teacher_assignments as the authoritative single source of truth
+ */
+function isTeacherAssignedToClassAndSubject($teacherIdentifier, $classIdentifier, $subjectIdentifier = null, $db = null) {
+    if (!$db) $db = getDbConnection();
+    if (!$db || empty($teacherIdentifier)) return false;
+
+    $tId = trim($teacherIdentifier);
+    $cId = trim($classIdentifier ?? '');
+    $sId = trim($subjectIdentifier ?? '');
+
+    if (empty($cId) || strtolower($cId) === 'all') return true;
+
+    try {
+        $stmt = $db->prepare("SELECT class_id as classId, subject_id as subjectId FROM teacher_assignments WHERE teacher_id = :t1 OR teacher_id = :t2");
+        $stmt->execute([':t1' => $tId, ':t2' => $tId]);
+        $rows = $stmt->fetchAll();
+
+        if (empty($rows)) {
+            // Fallback check on users table if legacy record
+            $uStmt = $db->prepare("SELECT classesAssigned, subjectsTaught FROM users WHERE id = :u1 OR customId = :u2");
+            $uStmt->execute([':u1' => $tId, ':u2' => $tId]);
+            $uRow = $uStmt->fetch();
+            if ($uRow) {
+                $cList = normalizeUserArrayField($uRow['classesAssigned'] ?? null);
+                $sList = normalizeUserArrayField($uRow['subjectsTaught'] ?? null);
+                $cMatch = in_array($cId, $cList, true) || in_array('all', array_map('strtolower', $cList), true);
+                if (!$cMatch) return false;
+                if (!empty($sId) && strtolower($sId) !== 'all') {
+                    return in_array($sId, $sList, true) || in_array('all', array_map('strtolower', $sList), true);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        $cIdNorm = strtolower($cId);
+        $sIdNorm = !empty($sId) ? strtolower($sId) : null;
+
+        foreach ($rows as $r) {
+            $rowClass = strtolower(trim($r['classId'] ?? ''));
+            $rowSubject = strtolower(trim($r['subjectId'] ?? ''));
+
+            $classMatches = ($rowClass === $cIdNorm || $rowClass === 'all');
+            if ($classMatches) {
+                if ($sIdNorm === null || $sIdNorm === 'all') {
+                    return true;
+                }
+                if ($rowSubject === $sIdNorm || $rowSubject === 'all') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * Authorize Teacher Assignment
+ * Enforces Section 8: Teachers can only access classes & subjects assigned to them
+ */
+function requireTeacherAssignment($authUser, $classId, $subjectId = null, $db = null) {
+    if (!$authUser) {
+        requireAuth();
+    }
+    $role = strtolower(trim($authUser['role'] ?? ''));
+    if ($role === 'admin' || $role === 'superadmin') {
+        return $authUser;
+    }
+    if ($role === 'teacher') {
+        $teacherId = $authUser['id'] ?? ($authUser['customId'] ?? '');
+        if (isTeacherAssignedToClassAndSubject($teacherId, $classId, $subjectId, $db)) {
+            return $authUser;
+        }
+        sendJsonResponse([
+            'success' => false,
+            'error' => 'ඔබ මෙම පන්තිය හෝ විෂය සඳහා පවරා ඇති ආචාර්යවරයෙකු නොවේ (Forbidden: Teacher not assigned to this class/subject).',
+            'code' => 'FORBIDDEN',
+            'status' => 403
+        ], 403);
+    }
+    sendJsonResponse([
+        'success' => false,
+        'error' => 'මෙම ක්‍රියාව සිදුකිරීමට ඔබට ආචාර්යවරයෙකු ලෙස අවසර නොමැත (Forbidden: Teacher access required).',
+        'code' => 'FORBIDDEN',
+        'status' => 403
+    ], 403);
+}
+
+/**
+ * Authorize Student Ownership
+ * Enforces Section 9: Students can ONLY access their own records/submissions
+ */
+function requireStudentOwnership($authUser, $targetStudentId) {
+    if (!$authUser) {
+        requireAuth();
+    }
+    $role = strtolower(trim($authUser['role'] ?? ''));
+    if (in_array($role, ['admin', 'superadmin', 'teacher'])) {
+        return $authUser;
+    }
+    if ($role === 'student') {
+        $myId = trim($authUser['id'] ?? '');
+        $myCustomId = trim($authUser['customId'] ?? '');
+        $myIndex = trim($authUser['indexNumber'] ?? '');
+        $target = trim(strval($targetStudentId));
+
+        if ($target === $myId || $target === $myCustomId || $target === $myIndex) {
+            return $authUser;
+        }
+
+        sendJsonResponse([
+            'success' => false,
+            'error' => 'ඔබට වෙනත් සිසුවෙකුගේ දත්ත හෝ ලකුණු පරිහරණය කිරීමට අවසර නොමැත (Forbidden: Cannot access other student resources).',
+            'code' => 'FORBIDDEN',
+            'status' => 403
+        ], 403);
+    }
+    sendJsonResponse([
+        'success' => false,
+        'error' => 'අවසර නොලත් ප්‍රවේශයකි (Forbidden: Access denied).',
+        'code' => 'FORBIDDEN',
+        'status' => 403
+    ], 403);
+}
+
+/**
  * OneSignal Push Notification Service for Sri Sumana Maha Pirivena ERP
  * Production Push Notification Gateway (Android Background & Foreground)
  */

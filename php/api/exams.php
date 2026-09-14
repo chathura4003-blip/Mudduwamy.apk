@@ -27,49 +27,7 @@ if ($examsIdx !== false) {
     }
 }
 
-// Ensure database table & schema migrations
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS exams (
-        id VARCHAR(100) PRIMARY KEY,
-        examCode VARCHAR(100) DEFAULT NULL,
-        title VARCHAR(255) NOT NULL,
-        titleSinhala VARCHAR(255) DEFAULT NULL,
-        subject VARCHAR(100) DEFAULT 'General',
-        subjectId VARCHAR(100) DEFAULT NULL,
-        gradeClass VARCHAR(100) DEFAULT 'All',
-        classId VARCHAR(100) DEFAULT NULL,
-        teacherId VARCHAR(100) DEFAULT NULL,
-        duration INT DEFAULT 60,
-        durationMinutes INT DEFAULT 60,
-        totalMarks INT DEFAULT 100,
-        passMark INT DEFAULT 40,
-        passingMarks INT DEFAULT 40,
-        attemptsAllowed INT DEFAULT 2,
-        startDate DATETIME DEFAULT NULL,
-        endDate DATETIME DEFAULT NULL,
-        status VARCHAR(50) DEFAULT 'published',
-        published TINYINT(1) DEFAULT 1,
-        questionsJson LONGTEXT DEFAULT NULL,
-        questions LONGTEXT DEFAULT NULL,
-        instructions TEXT DEFAULT NULL,
-        instructionsSinhala TEXT DEFAULT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $examCols = $db->query("SHOW COLUMNS FROM exams")->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('titleSinhala', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN titleSinhala VARCHAR(255) DEFAULT NULL"); }
-    if (!in_array('subjectId', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN subjectId VARCHAR(100) DEFAULT NULL"); }
-    if (!in_array('classId', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN classId VARCHAR(100) DEFAULT NULL"); }
-    if (!in_array('teacherId', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN teacherId VARCHAR(100) DEFAULT NULL"); }
-    if (!in_array('durationMinutes', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN durationMinutes INT DEFAULT 60"); }
-    if (!in_array('passMark', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN passMark INT DEFAULT 40"); }
-    if (!in_array('passingMarks', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN passingMarks INT DEFAULT 40"); }
-    if (!in_array('attemptsAllowed', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN attemptsAllowed INT DEFAULT 2"); }
-    if (!in_array('startDate', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN startDate DATETIME DEFAULT NULL"); }
-    if (!in_array('endDate', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN endDate DATETIME DEFAULT NULL"); }
-    if (!in_array('instructions', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN instructions TEXT DEFAULT NULL"); }
-    if (!in_array('instructionsSinhala', $examCols)) { @$db->exec("ALTER TABLE exams ADD COLUMN instructionsSinhala TEXT DEFAULT NULL"); }
-} catch (Exception $e) {}
+// Database schema managed cleanly by php/migrations/
 
 function formatExamItem($exam) {
     if (!$exam) return null;
@@ -146,9 +104,15 @@ if ($method === 'GET' && !$subAction) {
         $stmt->execute(['id' => $pathId]);
         $exam = $stmt->fetch();
         if ($exam) {
+            // 🛡️ Teacher Assignment Guard: Teachers can only view exams in assigned classes/subjects
+            if ($authUser && strtolower($authUser['role'] ?? '') === 'teacher') {
+                $exClass = $exam['classId'] ?? ($exam['gradeClass'] ?? '');
+                $exSubj = $exam['subjectId'] ?? ($exam['subject'] ?? '');
+                requireTeacherAssignment($authUser, $exClass, $exSubj, $db);
+            }
             sendJsonResponse(formatExamItem($exam));
         } else {
-            sendJsonResponse(["error" => "Exam not found"], 404);
+            sendApiError("Exam not found", "NOT_FOUND", 404);
         }
     } else {
         $stmt = $db->query("SELECT * FROM exams ORDER BY created_at DESC");
@@ -256,20 +220,13 @@ if ($method === 'GET' && !$subAction) {
             return false;
         };
 
-        // Filter based on authenticated teacher (Strict Teacher Ownership)
-        if ($authUser && $authUser['role'] === 'teacher') {
-            $tKeys = [
-                strtolower(trim($authUser['id'] ?? '')),
-                strtolower(trim($authUser['customId'] ?? '')),
-                strtolower(trim($authUser['name'] ?? '')),
-                strtolower(trim($authUser['monkName'] ?? '')),
-                strtolower(trim($authUser['email'] ?? ''))
-            ];
-            $tKeys = array_values(array_filter($tKeys));
-
-            $formatted = array_values(array_filter($formatted, function($ex) use ($tKeys) {
-                $exTeacher = strtolower(trim($ex['teacherId'] ?? ($ex['createdBy'] ?? ($ex['uploadedByTeacherId'] ?? ''))));
-                return (!empty($exTeacher) && in_array($exTeacher, $tKeys));
+        // 🛡️ Filter based on authenticated teacher (Authoritative teacher_assignments relationship)
+        if ($authUser && strtolower($authUser['role'] ?? '') === 'teacher') {
+            $tId = $authUser['id'] ?? ($authUser['customId'] ?? '');
+            $formatted = array_values(array_filter($formatted, function($ex) use ($tId, $db) {
+                $exClass = $ex['classId'] ?? ($ex['gradeClass'] ?? '');
+                $exSubj = $ex['subjectId'] ?? ($ex['subject'] ?? '');
+                return isTeacherAssignedToClassAndSubject($tId, $exClass, $exSubj, $db);
             }));
         }
 
@@ -343,55 +300,30 @@ if ($method === 'GET' && !$subAction) {
 
 // 1b. POST /api/exams/{id}/submit  →  Save exam submission
 if ($method === 'POST' && $pathId && $subAction === 'submit') {
+    $authUser = requireAuth();
     $body = getRequestBody();
 
-    try {
-        $db->exec("CREATE TABLE IF NOT EXISTS exam_submissions (
-            id VARCHAR(100) PRIMARY KEY,
-            examId VARCHAR(100) NOT NULL,
-            studentId VARCHAR(100),
-            studentCustomId VARCHAR(100) DEFAULT NULL,
-            studentName VARCHAR(255),
-            studentMonkName VARCHAR(255) DEFAULT NULL,
-            studentMonkStatus VARCHAR(50) DEFAULT NULL,
-            studentAvatar VARCHAR(500) DEFAULT NULL,
-            classId VARCHAR(100) DEFAULT NULL,
-            answersJson LONGTEXT,
-            answers LONGTEXT,
-            marksObtained FLOAT DEFAULT 0,
-            score FLOAT DEFAULT NULL,
-            totalMarks INT DEFAULT 100,
-            timeTaken INT DEFAULT NULL,
-            status VARCHAR(50) DEFAULT 'submitted',
-            submittedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-            teacherFeedback TEXT DEFAULT NULL,
-            graded TINYINT(1) DEFAULT 0
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-        $cols = $db->query("SHOW COLUMNS FROM exam_submissions")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('answersJson', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN answersJson LONGTEXT"); }
-        if (!in_array('answers', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN answers LONGTEXT"); }
-        if (!in_array('marksObtained', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN marksObtained FLOAT DEFAULT 0"); }
-        if (!in_array('score', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN score FLOAT DEFAULT NULL"); }
-        if (!in_array('totalMarks', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN totalMarks INT DEFAULT 100"); }
-        if (!in_array('timeTaken', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN timeTaken INT DEFAULT NULL"); }
-        if (!in_array('classId', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN classId VARCHAR(100) DEFAULT NULL"); }
-        if (!in_array('studentCustomId', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentCustomId VARCHAR(100) DEFAULT NULL"); }
-        if (!in_array('studentMonkName', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentMonkName VARCHAR(255) DEFAULT NULL"); }
-        if (!in_array('studentMonkStatus', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentMonkStatus VARCHAR(50) DEFAULT NULL"); }
-        if (!in_array('studentAvatar', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentAvatar VARCHAR(500) DEFAULT NULL"); }
-        if (!in_array('teacherFeedback', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN teacherFeedback TEXT DEFAULT NULL"); }
-        if (!in_array('graded', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN graded TINYINT(1) DEFAULT 0"); }
-    } catch (Exception $e) {}
-
     $subId = !empty($body['id']) ? trim($body['id']) : ('sub-' . time() . '-' . rand(1000, 9999));
-    $studentId = $body['studentId'] ?? '';
-    $studentCustomId = $body['studentCustomId'] ?? '';
-    $studentName = $body['studentName'] ?? '';
-    $studentMonkName = $body['studentMonkName'] ?? '';
-    $studentMonkStatus = $body['studentMonkStatus'] ?? 'lay';
-    $studentAvatar = $body['studentAvatar'] ?? '';
-    $classId = $body['classId'] ?? '';
+
+    // 🛡️ Student Ownership Rule: Always bind authenticated student's real identity
+    if (strtolower($authUser['role'] ?? '') === 'student') {
+        $studentId = $authUser['id'];
+        $studentCustomId = $authUser['customId'] ?? $authUser['indexNumber'] ?? $studentId;
+        $studentName = $authUser['name'];
+        $studentMonkName = $authUser['monkName'] ?? '';
+        $studentMonkStatus = $authUser['monkStatus'] ?? 'lay';
+        $studentAvatar = $authUser['avatar'] ?? '';
+        $classId = $authUser['classId'] ?? ($authUser['pirivenaClass'] ?? ($body['classId'] ?? ''));
+    } else {
+        $studentId = trim($body['studentId'] ?? $authUser['id']);
+        $studentCustomId = trim($body['studentCustomId'] ?? ($authUser['customId'] ?? $studentId));
+        $studentName = trim($body['studentName'] ?? $authUser['name']);
+        $studentMonkName = trim($body['studentMonkName'] ?? '');
+        $studentMonkStatus = trim($body['studentMonkStatus'] ?? 'lay');
+        $studentAvatar = trim($body['studentAvatar'] ?? '');
+        $classId = trim($body['classId'] ?? '');
+    }
+
     $teacherFeedback = $body['teacherFeedback'] ?? null;
     $answers = is_array($body['answers'] ?? null) ? json_encode($body['answers'], JSON_UNESCAPED_UNICODE) : strval($body['answers'] ?? '[]');
     $score = isset($body['score']) ? floatval($body['score']) : (isset($body['marksObtained']) ? floatval($body['marksObtained']) : 0);
@@ -448,12 +380,22 @@ if ($method === 'POST' && $pathId && $subAction === 'submit') {
     try {
         if (class_exists('OneSignalService') && ($graded || $status === 'graded' || $score > 0)) {
             $examTitle = 'මාර්ගගත විභාගය';
-            $stmtEx = $db->prepare("SELECT title FROM exams WHERE id = :id LIMIT 1");
-            $stmtEx->execute(['id' => $pathId]);
-            $foundEx = $stmtEx->fetch();
-            if ($foundEx && !empty($foundEx['title'])) $examTitle = $foundEx['title'];
+            try {
+                $exTitleStmt = $db->prepare("SELECT title, titleSinhala FROM exams WHERE id = :id LIMIT 1");
+                $exTitleStmt->execute(['id' => $pathId]);
+                $exRow = $exTitleStmt->fetch();
+                if ($exRow) {
+                    $examTitle = !empty($exRow['titleSinhala']) ? $exRow['titleSinhala'] : $exRow['title'];
+                }
+            } catch (Exception $eT) {}
 
-            OneSignalService::notifyExamResult($studentName, $studentId, $examTitle, $score, $totalMarks, $subId);
+            OneSignalService::notifyExamResult(
+                $studentId,
+                $examTitle,
+                $score,
+                $totalMarks,
+                $pathId
+            );
         }
     } catch (Exception $eNotify) {}
 
@@ -465,8 +407,13 @@ if ($method === 'POST' && $pathId && $subAction === 'submit') {
             "studentId" => $studentId,
             "studentCustomId" => $studentCustomId,
             "studentName" => $studentName,
-            "score" => $score,
+            "studentMonkName" => $studentMonkName,
+            "studentMonkStatus" => $studentMonkStatus,
+            "studentAvatar" => $studentAvatar,
+            "classId" => $classId,
+            "answers" => json_decode($answers, true) ?: [],
             "marksObtained" => $score,
+            "score" => $score,
             "totalMarks" => $totalMarks,
             "timeTaken" => $timeTaken,
             "status" => $status,
@@ -480,38 +427,6 @@ if ($method === 'POST' && $pathId && $subAction === 'submit') {
 // 1c. GET /api/exams/{id}/monitoring → get monitoring data for exam
 if ($method === 'GET' && $pathId && $subAction === 'monitoring') {
     $authUser = requireRole(['teacher', 'admin', 'superadmin']);
-    try {
-        $db->exec("CREATE TABLE IF NOT EXISTS exam_submissions (
-            id VARCHAR(100) PRIMARY KEY,
-            examId VARCHAR(100) NOT NULL,
-            studentId VARCHAR(100),
-            studentCustomId VARCHAR(100) DEFAULT NULL,
-            studentName VARCHAR(255),
-            studentMonkName VARCHAR(255) DEFAULT NULL,
-            studentMonkStatus VARCHAR(50) DEFAULT NULL,
-            studentAvatar VARCHAR(500) DEFAULT NULL,
-            classId VARCHAR(100) DEFAULT NULL,
-            answersJson LONGTEXT,
-            answers LONGTEXT,
-            marksObtained FLOAT DEFAULT 0,
-            score FLOAT DEFAULT NULL,
-            totalMarks INT DEFAULT 100,
-            timeTaken INT DEFAULT NULL,
-            status VARCHAR(50) DEFAULT 'submitted',
-            submittedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-            teacherFeedback TEXT DEFAULT NULL,
-            graded TINYINT(1) DEFAULT 0
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
-        $cols = $db->query("SHOW COLUMNS FROM exam_submissions")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('studentCustomId', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentCustomId VARCHAR(100) DEFAULT NULL"); }
-        if (!in_array('studentMonkName', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentMonkName VARCHAR(255) DEFAULT NULL"); }
-        if (!in_array('studentMonkStatus', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentMonkStatus VARCHAR(50) DEFAULT NULL"); }
-        if (!in_array('studentAvatar', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN studentAvatar VARCHAR(500) DEFAULT NULL"); }
-        if (!in_array('teacherFeedback', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN teacherFeedback TEXT DEFAULT NULL"); }
-        if (!in_array('graded', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN graded TINYINT(1) DEFAULT 0"); }
-        if (!in_array('score', $cols)) { @$db->exec("ALTER TABLE exam_submissions ADD COLUMN score FLOAT DEFAULT NULL"); }
-    } catch (Exception $e) {}
 
     // Fetch the exam
     $stmtExam = $db->prepare("SELECT * FROM exams WHERE id = :id LIMIT 1");
@@ -521,6 +436,14 @@ if ($method === 'GET' && $pathId && $subAction === 'monitoring') {
     if (!$rawExam) {
         sendJsonResponse(["error" => "Exam not found"], 404);
     }
+
+    // 🛡️ Teacher Assignment Guard: Teachers can only monitor exams in their assigned classes/subjects
+    if (strtolower($authUser['role'] ?? '') === 'teacher') {
+        $exClass = $rawExam['classId'] ?? ($rawExam['gradeClass'] ?? '');
+        $exSubj = $rawExam['subjectId'] ?? ($rawExam['subject'] ?? '');
+        requireTeacherAssignment($authUser, $exClass, $exSubj, $db);
+    }
+
     $exam = formatExamItem($rawExam);
 
     // Fetch all submissions for this exam
@@ -793,7 +716,13 @@ if ($method === 'POST' && !$subAction) {
         sendJsonResponse(["error" => "Exam title is required."], 400);
     }
 
-    $teacherId = isset($body['teacherId']) ? trim($body['teacherId']) : (isset($body['uploadedByTeacherId']) ? trim($body['uploadedByTeacherId']) : null);
+    // 🛡️ Teacher Assignment Enforcement: Teachers can ONLY create exams for assigned classes & subjects
+    if (strtolower($authUser['role'] ?? '') === 'teacher') {
+        requireTeacherAssignment($authUser, $classId, $subjectId, $db);
+        $teacherId = $authUser['id'];
+    } else {
+        $teacherId = isset($body['teacherId']) ? trim($body['teacherId']) : (isset($body['uploadedByTeacherId']) ? trim($body['uploadedByTeacherId']) : $authUser['id']);
+    }
 
     $stmt = $db->prepare("INSERT INTO exams (id, examCode, title, titleSinhala, subject, subjectId, gradeClass, classId, duration, durationMinutes, totalMarks, passMark, passingMarks, attemptsAllowed, startDate, endDate, instructions, instructionsSinhala, status, published, questionsJson, questions, teacherId) 
         VALUES (:id, :code, :t, :tsin, :sub, :subid, :gc, :cid, :dur, :durmin, :tm, :pmark, :pmrk, :att, :sdate, :edate, :inst, :instsin, :st, :pub, :qjson, :q, :tid)
@@ -877,6 +806,17 @@ if ($method === 'PUT' || $method === 'PATCH') {
         sendJsonResponse(["error" => "Exam not found"], 404);
     }
 
+    // 🛡️ Teacher Assignment Enforcement: Teachers can ONLY modify exams for assigned classes & subjects
+    if (strtolower($authUser['role'] ?? '') === 'teacher') {
+        $curClass = $existing['classId'] ?? ($existing['gradeClass'] ?? '');
+        $curSubj = $existing['subjectId'] ?? ($existing['subject'] ?? '');
+        requireTeacherAssignment($authUser, $curClass, $curSubj, $db);
+
+        $newClass = isset($body['classId']) ? trim($body['classId']) : (isset($body['gradeClass']) ? trim($body['gradeClass']) : $curClass);
+        $newSubj = isset($body['subjectId']) ? trim($body['subjectId']) : (isset($body['subject']) ? trim($body['subject']) : $curSubj);
+        requireTeacherAssignment($authUser, $newClass, $newSubj, $db);
+    }
+
     $title = isset($body['title']) ? trim($body['title']) : $existing['title'];
     $titleSinhala = isset($body['titleSinhala']) ? trim($body['titleSinhala']) : ($existing['titleSinhala'] ?? $title);
     
@@ -950,6 +890,21 @@ if ($method === 'DELETE') {
 
     if (!$examId) {
         sendJsonResponse(["error" => "Exam ID is required"], 400);
+    }
+
+    $stmt = $db->prepare("SELECT * FROM exams WHERE id = :id LIMIT 1");
+    $stmt->execute(['id' => $examId]);
+    $existing = $stmt->fetch();
+
+    if (!$existing) {
+        sendJsonResponse(["error" => "Exam not found"], 404);
+    }
+
+    // 🛡️ Teacher Assignment Enforcement: Teachers can ONLY delete exams in classes/subjects they teach
+    if (strtolower($authUser['role'] ?? '') === 'teacher') {
+        $curClass = $existing['classId'] ?? ($existing['gradeClass'] ?? '');
+        $curSubj = $existing['subjectId'] ?? ($existing['subject'] ?? '');
+        requireTeacherAssignment($authUser, $curClass, $curSubj, $db);
     }
 
     // Delete related submissions first

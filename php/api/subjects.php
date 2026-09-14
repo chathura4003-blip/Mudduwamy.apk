@@ -14,21 +14,7 @@ if (count($parts) > 0) {
     }
 }
 
-// Ensure subjects table structure
-try {
-    $db->exec("CREATE TABLE IF NOT EXISTS `subjects` (
-        `id` VARCHAR(64) NOT NULL,
-        `subjectCode` VARCHAR(50) NOT NULL,
-        `subjectName` VARCHAR(255) NOT NULL,
-        `subjectNameSinhala` VARCHAR(255) NOT NULL,
-        `gradeLevel` VARCHAR(50) DEFAULT 'All',
-        `category` VARCHAR(100) DEFAULT 'General',
-        `credits` INT DEFAULT 4,
-        `description` TEXT DEFAULT NULL,
-        `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
-} catch (Exception $e) {}
+// Subjects table schema managed by php/migrations/
 
 // Helper to format subject records for React UI
 function formatSubjectRecord($s) {
@@ -67,7 +53,7 @@ if ($method === 'GET') {
 
 // 2. POST Subject
 if ($method === 'POST') {
-    $authUser = requireRole(['admin', 'superadmin', 'teacher']);
+    $authUser = requireRole(['admin', 'superadmin']);
     $body = getRequestBody();
     $id = isset($body['id']) && !empty($body['id']) ? trim($body['id']) : 'sub-' . time() . '-' . rand(100, 999);
     $subjectCode = isset($body['subjectCode']) && !empty($body['subjectCode']) ? trim($body['subjectCode']) : (isset($body['code']) ? trim($body['code']) : 'SUB-' . rand(100, 999));
@@ -105,32 +91,8 @@ if ($method === 'POST') {
             'desc' => $description
         ]);
     } catch (Exception $ePost) {
-        // Auto-heal table columns if missing
-        try {
-            @$db->exec("ALTER TABLE subjects ADD COLUMN credits INT DEFAULT 4");
-            @$db->exec("ALTER TABLE subjects ADD COLUMN description TEXT DEFAULT NULL");
-            @$db->exec("ALTER TABLE subjects ADD COLUMN subjectNameSinhala VARCHAR(255) DEFAULT NULL");
-            
-            $stmt = $db->prepare("INSERT INTO subjects (id, subjectCode, subjectName, subjectNameSinhala, gradeLevel, category, credits, description)
-                VALUES (:id, :code, :sn, :sns, :gl, :cat, :cr, :desc)
-                ON DUPLICATE KEY UPDATE 
-                    subjectCode = VALUES(subjectCode), 
-                    subjectName = VALUES(subjectName), 
-                    subjectNameSinhala = VALUES(subjectNameSinhala)");
-            $stmt->execute([
-                'id' => $id,
-                'code' => $subjectCode,
-                'sn' => $subjectName,
-                'sns' => $subjectNameSinhala,
-                'gl' => $gradeLevel,
-                'cat' => $category,
-                'cr' => $credits,
-                'desc' => $description
-            ]);
-        } catch (Exception $eRetry) {
-            error_log("Failed to insert subject: " . $eRetry->getMessage());
-            sendJsonResponse(["error" => "Failed to save subject: " . $eRetry->getMessage()], 500);
-        }
+        error_log("Failed to insert subject: " . $ePost->getMessage());
+        sendJsonResponse(["error" => "Failed to save subject: " . $ePost->getMessage()], 500);
     }
 
     logAuditEvent("නව විෂයයක් එක් කිරීම (Subject Added)", "විෂයය: '{$subjectNameSinhala}' ({$subjectCode}) සාර්ථකව පද්ධතියට එක් කරන ලදී.", 'Academic');
@@ -151,7 +113,7 @@ if ($method === 'POST') {
 
 // 3. PUT / PATCH Subject
 if ($method === 'PUT' || $method === 'PATCH') {
-    $authUser = requireRole(['admin', 'superadmin', 'teacher']);
+    $authUser = requireRole(['admin', 'superadmin']);
     $body = getRequestBody();
     $subjectId = $pathId ?: (isset($body['id']) ? $body['id'] : null);
 
@@ -197,21 +159,8 @@ if ($method === 'PUT' || $method === 'PATCH') {
             'desc' => $description
         ]);
     } catch (Exception $ePut) {
-        try {
-            @$db->exec("ALTER TABLE subjects ADD COLUMN credits INT DEFAULT 4");
-            @$db->exec("ALTER TABLE subjects ADD COLUMN description TEXT DEFAULT NULL");
-            @$db->exec("ALTER TABLE subjects ADD COLUMN subjectNameSinhala VARCHAR(255) DEFAULT NULL");
-            
-            $stmt = $db->prepare("UPDATE subjects SET subjectCode = :code, subjectName = :sn, subjectNameSinhala = :sns WHERE id = :id");
-            $stmt->execute([
-                'id' => $subjectId,
-                'code' => $subjectCode,
-                'sn' => $subjectName,
-                'sns' => $subjectNameSinhala
-            ]);
-        } catch (Exception $eRetry) {
-            sendJsonResponse(["error" => "Failed to update subject"], 500);
-        }
+        error_log("Failed to update subject: " . $ePut->getMessage());
+        sendJsonResponse(["error" => "Failed to update subject"], 500);
     }
 
     logAuditEvent("විෂය තොරතුරු යාවත්කාලීන කිරීම (Subject Updated)", "විෂයය: '{$subjectNameSinhala}' ({$subjectCode}) තොරතුරු යාවත්කාලීන කරන ලදී.", 'Academic');
