@@ -583,12 +583,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, []);
 
   useEffect(() => {
-    // Only fetch and poll active sessions when the admin is explicitly on the Audit/Security tab
-    const isSecurityActive = activeTab === 'audit' || activeTab === 'security';
+    // Only fetch and poll active sessions when the admin is explicitly on the Audit/Settings tab
+    const isSecurityActive = activeTab === 'audit' || activeTab === 'settings';
     if (!isSecurityActive) return;
 
     fetchActiveSessions();
-    // 🔄 Auto-sync active sessions gently (30s) only when security tab is active
+    // 🔄 Auto-sync active sessions gently (30s) only when audit or settings tab is active
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchActiveSessions();

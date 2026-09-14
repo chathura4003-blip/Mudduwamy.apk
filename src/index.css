@@ -17,6 +17,37 @@
 @variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
 /* ========================================================================= */
+/* 📱 NATIVE MOBILE APK CORE TOUCH, HIGHLIGHT & RENDERING OPTIMIZATIONS      */
+/* ========================================================================= */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button, a, [role="button"], input[type="button"], input[type="submit"] {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ========================================================================= */
 /* 📱 SAFE AREA INSET SYSTEM (MOBILE CAMERA NOTCH, PUNCH-HOLE & NAVIGATION) */
 /* ========================================================================= */
 :root {
