@@ -1022,7 +1022,7 @@ function ensureCoreSchema() {
         $passHashAdmin = password_hash('admin123', PASSWORD_DEFAULT);
 
         $seedSql = "INSERT IGNORE INTO users (id, username, password, plain_password, monkName, name, email, phone, role, customId, indexNumber, pirivenaClass, status) VALUES
-            ('usr-admin-01', 'admin', '$passHashAdmin', 'admin123', 'පූජ්‍ය ශ්‍රී සුමන නායක හිමි', 'ප්‍රධාන පරිපාලක (System Administrator)', 'admin@pirivena.lk', '0712345678', 'superadmin', 'ADM-001', 'ADM-001', 'පාලක මණ්ඩලය', 'active')";
+            ('usr-admin-01', 'admin', '$passHashAdmin', NULL, 'පූජ්‍ය ශ්‍රී සුමන නායක හිමි', 'ප්‍රධාන පරිපාලක (System Administrator)', 'admin@pirivena.lk', '0712345678', 'superadmin', 'ADM-001', 'ADM-001', 'පාලක මණ්ඩලය', 'active')";
         try {
             $db->exec($seedSql);
         } catch (Exception $eSeed) {
@@ -1238,12 +1238,8 @@ function formatUserRecord($u, $db = null) {
         }
     }
 
-    // Format readable password for admin display
-    if (!empty($u['plain_password'])) {
-        $u['password'] = $u['plain_password'];
-    } elseif (empty($u['password']) || strlen($u['password']) > 40) {
-        $u['password'] = '123456';
-    }
+    // 🛡️ Security Guard: Never return passwords, plain passwords, or tokens in formatted records
+    unset($u['password'], $u['plain_password'], $u['passwordHash'], $u['token']);
 
     return $u;
 }

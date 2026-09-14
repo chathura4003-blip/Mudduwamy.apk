@@ -8,16 +8,17 @@ const mapTeacher = (t: any): Teacher => {
   if (!customId || customId.startsWith('usr-') || !customId.startsWith('TCH-')) {
     customId = `TCH-2026-${fallbackNum.padStart(3, '0')}`;
   }
-  const password = t.plain_password || t.password || '123456';
   const status = t.status || 'active';
   const classId = t.classId || t.pirivenaClass || t.gradeClass || null;
+  const sanitized = { ...t };
+  delete (sanitized as any).password;
+  delete (sanitized as any).plain_password;
 
   return {
-    ...t,
+    ...sanitized,
     role: 'teacher',
     customId,
     indexNumber: customId,
-    password,
     status,
     classId,
     pirivenaClass: classId,

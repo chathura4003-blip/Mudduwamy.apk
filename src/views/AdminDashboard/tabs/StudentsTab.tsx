@@ -126,9 +126,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
   };
 
   const handleShareCredentials = async (user: User) => {
-    const pwd = user.plain_password || user.password || 'pirivena123';
     const loginUrl = getPublicShareUrl();
-    const text = `🪷 ශ්‍රී සුමන මහා පිරිවෙන - ERP පිවිසුම් ගිණුම\n👤 නම: ${user.monkName || user.name}\n🆔 User ID / Email: ${user.customId} (${user.email})\n🔑 Password: ${pwd}\n🌐 Login Link: ${loginUrl}`;
+    const text = `🪷 ශ්‍රී සුමන මහා පිරිවෙන - ERP පිවිසුම් ගිණුම\n👤 නම: ${user.monkName || user.name}\n🆔 User ID: ${user.customId}\n📧 Email: ${user.email || 'N/A'}\n🌐 Login Link: ${loginUrl}`;
     
     handleCopy(text, `share-${user.id}`);
 
@@ -141,9 +140,8 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
   };
 
   const handleDirectWhatsAppShare = (user: User) => {
-    const pwd = user.plain_password || user.password || 'pirivena123';
     const loginUrl = getPublicShareUrl();
-    const text = `🪷 ශ්‍රී සුමන මහා පිරිවෙන - ERP පිවිසුම් ගිණුම\n👤 නම: ${user.monkName || user.name}\n🆔 User ID / Email: ${user.customId} (${user.email})\n🔑 Password: ${pwd}\n🌐 Login: ${loginUrl}`;
+    const text = `🪷 ශ්‍රී සුමන මහා පිරිවෙන - ERP පිවිසුම් ගිණුම\n👤 නම: ${user.monkName || user.name}\n🆔 User ID: ${user.customId}\n📧 Email: ${user.email || 'N/A'}\n🌐 Login: ${loginUrl}`;
     const phone = user.phone || user.guardianPhone || (user as any).whatsappNumber;
     shareToWhatsApp(text, phone);
   };
@@ -541,39 +539,17 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
                       <span className="truncate max-w-[120px] xs:max-w-[180px] sm:max-w-none">{user.email || user.customId}</span>
                     </span>
 
-                    {/* Password Box with Eye Toggle & Copy */}
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-white dark:bg-stone-900 rounded-lg border border-slate-200 dark:border-stone-700 text-[10px] font-mono shadow-2xs shrink-0">
-                      <Lock className="w-3 h-3 text-amber-500" />
-                      <span className="font-bold text-slate-900 dark:text-white tracking-wider">
-                        {showPasswordMap[user.id]
-                          ? (user.plain_password || user.password || 'pirivena123')
-                          : '••••••••'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleShowPassword(user.id)}
-                        className="p-0.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer ml-0.5"
-                        title={showPasswordMap[user.id] ? 'Hide Password' : 'Show Password'}
-                      >
-                        {showPasswordMap[user.id] ? (
-                          <EyeOff className="w-3 h-3" />
-                        ) : (
-                          <Eye className="w-3 h-3" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(user.plain_password || user.password || 'pirivena123', `pwd-${user.id}`)}
-                        className="p-0.5 text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer"
-                        title="Copy Password"
-                      >
-                        {copiedKey === `pwd-${user.id}` ? (
-                          <Check className="w-3 h-3 text-emerald-600 font-bold" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
+                    {/* Password Status / Reset Action */}
+                    <button
+                      type="button"
+                      onClick={() => onOpenEditStudent(user)}
+                      className="flex items-center gap-1.5 px-2 py-0.5 bg-white dark:bg-stone-900 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-lg border border-slate-200 dark:border-stone-700 text-[10px] font-mono shadow-2xs shrink-0 transition text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer active:scale-95"
+                      title="මුරපදය වෙනස් කරන්න (Reset/Change Password)"
+                    >
+                      <Lock className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span className="font-bold tracking-widest text-slate-400">••••••••</span>
+                      <span className="text-[9px] font-sans font-semibold text-amber-700 dark:text-amber-400">වෙනස් කරන්න</span>
+                    </button>
                   </div>
 
                   {/* Actions: Share Credentials & Details Tray */}

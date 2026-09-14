@@ -8,17 +8,18 @@ const mapStudent = (s: any): Student => {
   if (!customId || customId.startsWith('usr-') || (!customId.startsWith('STD-') && !customId.startsWith('STU-'))) {
     customId = `STD-2026-${fallbackNum.padStart(3, '0')}`;
   }
-  const password = s.plain_password || s.password || '123456';
   const status = s.status || 'active';
   const classId = s.classId || s.pirivenaClass || s.gradeClass || null;
+  const sanitized = { ...s };
+  delete (sanitized as any).password;
+  delete (sanitized as any).plain_password;
 
   return {
-    ...s,
+    ...sanitized,
     role: 'student',
     customId,
     indexNumber: customId,
     admissionNo: s.admissionNo || customId,
-    password,
     status,
     classId,
     pirivenaClass: classId,

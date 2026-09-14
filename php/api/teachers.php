@@ -54,7 +54,8 @@ function formatTeacherRecord($t, $db = null) {
     $t['indexNumber'] = $customId;
     $t['role'] = 'teacher';
     $t['status'] = !empty($t['status']) ? $t['status'] : 'active';
-    $t['plain_password'] = !empty($t['plain_password']) ? $t['plain_password'] : (!empty($t['password']) ? $t['password'] : '123456');
+    // 🛡️ Security Guard: Never expose passwords or tokens
+    unset($t['password'], $t['plain_password'], $t['token'], $t['passwordHash']);
 
     $t['classesAssigned'] = normalizeTeacherArrayField($t['classesAssigned'] ?? null);
     $t['subjectsTaught'] = normalizeTeacherArrayField($t['subjectsTaught'] ?? null);
@@ -104,9 +105,7 @@ if ($method === 'GET') {
 
         if ($teacher) {
             $formatted = formatTeacherRecord($teacher, $db);
-            if (!$isAdmin && (!$authUser || ($authUser['id'] !== ($teacher['id'] ?? '') && ($authUser['customId'] ?? '') !== ($teacher['customId'] ?? '')))) {
-                unset($formatted['password'], $formatted['plain_password'], $formatted['token']);
-            }
+            unset($formatted['password'], $formatted['plain_password'], $formatted['token'], $formatted['passwordHash']);
             sendJsonResponse($formatted);
         } else {
             sendJsonResponse(["error" => "Teacher not found"], 404);
@@ -160,9 +159,7 @@ if ($method === 'GET') {
         $processed = [];
         foreach ($teachers as $t) {
             $t = formatTeacherRecord($t, null);
-            if (!$isAdmin) {
-                unset($t['password'], $t['plain_password'], $t['token']);
-            }
+            unset($t['password'], $t['plain_password'], $t['token'], $t['passwordHash']);
             if (!empty($t['id']) && isset($teacherMap[$t['id']])) {
                 $t['teacherAssignments'] = $teacherMap[$t['id']];
                 $assignedClasses = array_values(array_unique(array_column($teacherMap[$t['id']], 'classId')));
@@ -213,10 +210,10 @@ if ($method === 'POST') {
         $stmt = $db->prepare("INSERT INTO teachers (
             id, customId, name, monkName, email, phone, nic, qualifications, classesAssigned, subjectsTaught, categoriesTaught, status, joinedDate, plain_password, avatar
         ) VALUES (
-            :id, :customId, :name, :monkName, :email, :phone, :nic, :qualifications, :classesAssigned, :subjectsTaught, :categoriesTaught, :status, :joinedDate, :plain_password, :avatar
+            :id, :customId, :name, :monkName, :email, :phone, :nic, :qualifications, :classesAssigned, :subjectsTaught, :categoriesTaught, :status, :joinedDate, NULL, :avatar
         ) ON DUPLICATE KEY UPDATE
             name = VALUES(name), monkName = VALUES(monkName), email = VALUES(email), phone = VALUES(phone), nic = VALUES(nic), qualifications = VALUES(qualifications),
-            classesAssigned = VALUES(classesAssigned), subjectsTaught = VALUES(subjectsTaught), categoriesTaught = VALUES(categoriesTaught), status = VALUES(status), plain_password = VALUES(plain_password), avatar = VALUES(avatar)");
+            classesAssigned = VALUES(classesAssigned), subjectsTaught = VALUES(subjectsTaught), categoriesTaught = VALUES(categoriesTaught), status = VALUES(status), plain_password = NULL, avatar = VALUES(avatar)");
 
         $stmt->execute([
             'id' => $id,
@@ -232,7 +229,6 @@ if ($method === 'POST') {
             'categoriesTaught' => $categoriesTaught,
             'status' => $status,
             'joinedDate' => $joinedDate,
-            'plain_password' => $rawPassword,
             'avatar' => $avatar
         ]);
     } catch (Exception $eTeach) {
@@ -257,16 +253,15 @@ if ($method === 'POST') {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             $stmt = $db->prepare("INSERT INTO teachers (id, customId, name, email, phone, status, plain_password) 
-                VALUES (:id, :cid, :name, :email, :phone, :status, :pp)
-                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = VALUES(plain_password)");
+                VALUES (:id, :cid, :name, :email, :phone, :status, NULL)
+                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = NULL");
             $stmt->execute([
                 'id' => $id,
                 'cid' => $customId,
                 'name' => $name,
                 'email' => $email,
                 'phone' => $phone,
-                'status' => $status,
-                'pp' => $rawPassword
+                'status' => $status
             ]);
         } catch (Exception $eRetry) {
             error_log("Failed to insert teacher: " . $eRetry->getMessage());
@@ -278,9 +273,9 @@ if ($method === 'POST') {
         $uStmt = $db->prepare("INSERT INTO users (
             id, username, password, monkName, name, email, phone, role, indexNumber, customId, nic, avatar, plain_password, status, classesAssigned, subjectsTaught, categoriesTaught
         ) VALUES (
-            :id, :username, :password, :monkName, :name, :email, :phone, 'teacher', :customId, :customId, :nic, :avatar, :plain_password, :status, :classesAssigned, :subjectsTaught, :categoriesTaught
+            :id, :username, :password, :monkName, :name, :email, :phone, 'teacher', :customId, :customId, :nic, :avatar, NULL, :status, :classesAssigned, :subjectsTaught, :categoriesTaught
         ) ON DUPLICATE KEY UPDATE
-            password = VALUES(password), monkName = VALUES(monkName), name = VALUES(name), email = VALUES(email), phone = VALUES(phone), nic = VALUES(nic), avatar = VALUES(avatar), plain_password = VALUES(plain_password), status = VALUES(status), classesAssigned = VALUES(classesAssigned), subjectsTaught = VALUES(subjectsTaught), categoriesTaught = VALUES(categoriesTaught)");
+            password = VALUES(password), monkName = VALUES(monkName), name = VALUES(name), email = VALUES(email), phone = VALUES(phone), nic = VALUES(nic), avatar = VALUES(avatar), plain_password = NULL, status = VALUES(status), classesAssigned = VALUES(classesAssigned), subjectsTaught = VALUES(subjectsTaught), categoriesTaught = VALUES(categoriesTaught)");
 
         $uStmt->execute([
             'id' => $id,
@@ -293,7 +288,6 @@ if ($method === 'POST') {
             'customId' => $customId,
             'nic' => $nic,
             'avatar' => $avatar,
-            'plain_password' => $rawPassword,
             'status' => $status,
             'classesAssigned' => $classesAssigned,
             'subjectsTaught' => $subjectsTaught,
@@ -370,13 +364,14 @@ if ($method === 'PUT') {
 
     if (isset($body['password']) && !empty(trim($body['password']))) {
         $rawPassword = trim($body['password']);
-        $updates[] = "plain_password = :plain_password";
-        $params['plain_password'] = $rawPassword;
+        $hash = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $updates[] = "password = :password";
+        $updates[] = "plain_password = NULL";
+        $params['password'] = $hash;
         
         try {
-            $hash = password_hash($rawPassword, PASSWORD_DEFAULT);
-            $uPassStmt = $db->prepare("UPDATE users SET password = :p, plain_password = :pp WHERE id = :uid1 OR customId = :uid2");
-            $uPassStmt->execute(['p' => $hash, 'pp' => $rawPassword, 'uid1' => $pathId, 'uid2' => $pathId]);
+            $uPassStmt = $db->prepare("UPDATE users SET password = :p, plain_password = NULL WHERE id = :uid1 OR customId = :uid2");
+            $uPassStmt->execute(['p' => $hash, 'uid1' => $pathId, 'uid2' => $pathId]);
         } catch (Exception $e) {}
     }
 

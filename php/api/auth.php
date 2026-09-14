@@ -60,12 +60,13 @@ if ($method === 'POST') {
         }
 
         $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-        $upStmt = $db->prepare("UPDATE users SET password = :password, plain_password = :plain_password WHERE id = :id");
+        $upStmt = $db->prepare("UPDATE users SET password = :password, plain_password = NULL WHERE id = :id");
         $upStmt->execute([
             'password' => $newHash,
-            'plain_password' => $newPassword,
             'id' => $userId
         ]);
+        @$db->prepare("UPDATE teachers SET password = :password, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['password' => $newHash, 'id' => $userId]);
+        @$db->prepare("UPDATE students SET password = :password, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['password' => $newHash, 'id' => $userId]);
 
         logAuditEvent('මුරපදය වෙනස් කිරීම (Password Changed)', "පරිශීලක '{$authUser['name']}' මුරපදය සාර්ථකව වෙනස් කරන ලදී.", 'Auth', $authUser['name'], $authUser['id']);
         sendJsonResponse(["success" => true, "message" => "මුරපදය සාර්ථකව යාවත්කාලීන විය (Password changed successfully)."]);
@@ -257,15 +258,33 @@ if ($method === 'POST') {
             sendJsonResponse(["error" => "ඔබගේ ගිණුම අක්‍රීය කර ඇත (Account is Inactive). කරුණාකර පිරිවෙන් පාලනාධිකාරිය හමුවන්න."], 403);
         }
 
-        // Strict Password Verification: match against user's actual database password
+        // Strict Password Verification: match against bcrypt hash or transparently upgrade legacy plain password
         $pwdMatch = false;
         $plainPass = isset($user['plain_password']) ? trim($user['plain_password']) : '';
         $hashPass = isset($user['password']) ? trim($user['password']) : '';
 
-        if (!empty($plainPass) && $password === $plainPass) {
+        if (!empty($hashPass) && password_verify($password, $hashPass)) {
             $pwdMatch = true;
-        } elseif (!empty($hashPass) && (password_verify($password, $hashPass) || $password === $hashPass)) {
+        } elseif (!empty($plainPass) && hash_equals($plainPass, $password)) {
             $pwdMatch = true;
+            // Transparently upgrade legacy plain password to secure bcrypt hash
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            try {
+                $targetUid = $user['id'] ?? ($user['customId'] ?? '');
+                @$db->prepare("UPDATE users SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+                @$db->prepare("UPDATE teachers SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+                @$db->prepare("UPDATE students SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+            } catch (Exception $eUpgrade) {}
+        } elseif (!empty($hashPass) && hash_equals($hashPass, $password)) {
+            // Legacy plain password stored directly in password column
+            $pwdMatch = true;
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            try {
+                $targetUid = $user['id'] ?? ($user['customId'] ?? '');
+                @$db->prepare("UPDATE users SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+                @$db->prepare("UPDATE teachers SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+                @$db->prepare("UPDATE students SET password = :p, plain_password = NULL WHERE id = :id OR customId = :id")->execute(['p' => $newHash, 'id' => $targetUid]);
+            } catch (Exception $eUpgrade2) {}
         }
 
         if ($pwdMatch) {
@@ -316,8 +335,8 @@ if ($method === 'POST') {
                             'phone' => $user['phone'] ?? null,
                             'role' => $user['role'] ?? 'student',
                             'token' => $token,
-                            'plain_password' => $plainPass,
-                            'password' => !empty($hashPass) ? $hashPass : password_hash($plainPass ?: '123456', PASSWORD_DEFAULT),
+                            'plain_password' => null,
+                            'password' => (!empty($hashPass) && strpos($hashPass, '$2y$') === 0) ? $hashPass : password_hash($password, PASSWORD_DEFAULT),
                             'status' => $user['status'] ?? 'active',
                             'pirivenaClass' => $user['pirivenaClass'] ?? ($user['classId'] ?? null),
                             'classId' => $user['classId'] ?? ($user['pirivenaClass'] ?? null)
@@ -347,10 +366,8 @@ if ($method === 'POST') {
             unset($user['password'], $user['plain_password'], $user['passwordHash']);
             $formattedUser = formatUserRecord($user, $db);
             
-            // 🛡️ Privacy Guard: Non-admins never receive plain_password
-            if (($formattedUser['role'] ?? '') !== 'admin') {
-                unset($formattedUser['password'], $formattedUser['plain_password'], $formattedUser['passwordHash']);
-            }
+            // 🛡️ Privacy Guard: Passwords and hashes are NEVER returned to the client
+            unset($formattedUser['password'], $formattedUser['plain_password'], $formattedUser['passwordHash']);
             
             // Record Audit Trail
             logAuditEvent('පද්ධතියට පිවිසීම (User Login)', "පරිශීලක '{$formattedUser['name']}' ({$formattedUser['role']}) සාර්ථකව පද්ධතියට පිවිසුණි.", 'Auth', $formattedUser['name'], $formattedUser['id']);
@@ -384,10 +401,7 @@ if ($method === 'GET') {
     if ($user) {
         unset($user['password'], $user['plain_password'], $user['token'], $user['passwordHash']);
         $formatted = formatUserRecord($user, $db);
-        if (($formatted['role'] ?? '') !== 'admin') {
-            unset($formatted['password'], $formatted['plain_password'], $formatted['passwordHash']);
-        }
-        unset($formatted['token']);
+        unset($formatted['password'], $formatted['plain_password'], $formatted['passwordHash'], $formatted['token']);
         sendJsonResponse(["success" => true, "authenticated" => true, "user" => $formatted]);
     } else {
         // Return clean 200 with user null for fresh/unauthenticated sessions

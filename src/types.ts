@@ -9,6 +9,7 @@ export interface User {
   nameSinhala?: string;
   email: string;
   password?: string;
+  /** @deprecated Security Policy: plain_password is permanently removed */
   plain_password?: string;
   role: UserRole;
   phone?: string;

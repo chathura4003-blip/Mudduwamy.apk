@@ -257,12 +257,8 @@ function formatUserRecord($u, $db = null) {
         }
     }
 
-    // Format readable password for Admin Panel display
-    if (!empty($u['plain_password'])) {
-        $u['password'] = $u['plain_password'];
-    } elseif (empty($u['password']) || strlen($u['password']) > 40) {
-        $u['password'] = '123456';
-    }
+    // 🛡️ Security Guard: Never return passwords, plain passwords, or tokens
+    unset($u['password'], $u['plain_password'], $u['passwordHash'], $u['token']);
 
     return $u;
 }
@@ -354,9 +350,7 @@ if ($method === 'GET') {
 
         if ($user) {
             $formatted = formatUserRecord($user, $db);
-            if (!$isAdmin && ($authUser['id'] !== ($user['id'] ?? '') && ($authUser['customId'] ?? '') !== ($user['customId'] ?? ''))) {
-                unset($formatted['password'], $formatted['plain_password'], $formatted['token'], $formatted['passwordHash']);
-            }
+            unset($formatted['password'], $formatted['plain_password'], $formatted['token'], $formatted['passwordHash']);
             sendJsonResponse($formatted);
         } else {
             sendJsonResponse(["error" => "User not found"], 404);
@@ -461,9 +455,7 @@ if ($method === 'GET') {
 
         foreach ($users as &$u) {
             $u = formatUserRecord($u, null);
-            if (!$isAdmin) {
-                unset($u['password'], $u['plain_password'], $u['token'], $u['passwordHash']);
-            }
+            unset($u['password'], $u['plain_password'], $u['token'], $u['passwordHash']);
             if (!empty($u['id'])) {
                 if ($u['role'] === 'teacher') {
                     $u['teacherAssignments'] = $teacherMap[$u['id']] ?? [];
@@ -549,7 +541,7 @@ if ($method === 'POST') {
         'indexNumber' => $indexNumber,
         'username' => $username,
         'password' => $passwordHash,
-        'plain_password' => $rawPassword,
+        'plain_password' => null,
         'name' => $name,
         'monkName' => $monkName,
         'email' => $email,
@@ -607,14 +599,13 @@ if ($method === 'POST') {
             error_log("Users dynamic insert warning: " . $eIns->getMessage());
             try {
                 $minStmt = $db->prepare("INSERT INTO users (id, customId, username, password, plain_password, name, monkName, email, phone, role, status) 
-                    VALUES (:id, :cid, :u, :p, :pp, :name, :mname, :email, :phone, :role, :status)
-                    ON DUPLICATE KEY UPDATE name = VALUES(name), password = VALUES(password), plain_password = VALUES(plain_password)");
+                    VALUES (:id, :cid, :u, :p, NULL, :name, :mname, :email, :phone, :role, :status)
+                    ON DUPLICATE KEY UPDATE name = VALUES(name), password = VALUES(password), plain_password = NULL");
                 $minStmt->execute([
                     'id' => $id,
                     'cid' => $customId,
                     'u' => $username . '_' . rand(10, 99),
                     'p' => $passwordHash,
-                    'pp' => $rawPassword,
                     'name' => $name,
                     'mname' => $monkName,
                     'email' => $email,
@@ -641,7 +632,7 @@ if ($method === 'POST') {
                 'email' => $email, 'phone' => $phone, 'nic' => $nic, 'qualifications' => $qualification,
                 'classesAssigned' => $classesAssigned, 'subjectsTaught' => $subjectsTaught,
                 'categoriesTaught' => $categoriesTaught, 'status' => $status, 'avatar' => $avatar,
-                'plain_password' => $rawPassword
+                'plain_password' => null
             ];
             foreach ($tData as $tc => $tv) {
                 if (in_array($tc, $tCols)) {
@@ -651,7 +642,7 @@ if ($method === 'POST') {
                 }
             }
             if (!empty($tInsCols)) {
-                $tInsSql = "INSERT INTO teachers (" . implode(', ', $tInsCols) . ") VALUES (" . implode(', ', $tPlaceholders) . ") ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email)";
+                $tInsSql = "INSERT INTO teachers (" . implode(', ', $tInsCols) . ") VALUES (" . implode(', ', $tPlaceholders) . ") ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), plain_password = NULL";
                 $tInsStmt = $db->prepare($tInsSql);
                 $tInsStmt->execute($tParams);
             }
@@ -691,7 +682,7 @@ if ($method === 'POST') {
                 'enrolledSubjects' => $subjectsAssigned,
                 'subjectsAssigned' => $subjectsAssigned,
                 'status' => $status,
-                'plain_password' => $rawPassword,
+                'plain_password' => null,
                 'avatar' => $avatar
             ];
             foreach ($sData as $sc => $sv) {
@@ -702,7 +693,7 @@ if ($method === 'POST') {
                 }
             }
             if (!empty($sInsCols)) {
-                $sInsSql = "INSERT INTO students (" . implode(', ', $sInsCols) . ") VALUES (" . implode(', ', $sPlaceholders) . ") ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), pirivenaClass = VALUES(pirivenaClass), classId = VALUES(classId), plain_password = VALUES(plain_password)";
+                $sInsSql = "INSERT INTO students (" . implode(', ', $sInsCols) . ") VALUES (" . implode(', ', $sPlaceholders) . ") ON DUPLICATE KEY UPDATE name = VALUES(name), email = VALUES(email), pirivenaClass = VALUES(pirivenaClass), classId = VALUES(classId), plain_password = NULL";
                 $sInsStmt = $db->prepare($sInsSql);
                 $sInsStmt->execute($sParams);
             }
@@ -860,7 +851,7 @@ if ($method === 'PUT' || $method === 'PATCH') {
     if (array_key_exists('password', $body) && !empty(trim($body['password']))) {
         $rawPass = trim($body['password']);
         $fieldMap['password'] = password_hash($rawPass, PASSWORD_DEFAULT);
-        $fieldMap['plain_password'] = $rawPass;
+        $fieldMap['plain_password'] = null;
     }
 
     $setClauses = [];
@@ -895,7 +886,8 @@ if ($method === 'PUT' || $method === 'PATCH') {
                 'categoriesTaught' => $categoriesTaught, 'status' => $status, 'avatar' => $avatar
             ];
             if (!empty($rawPass)) {
-                $tFields['plain_password'] = $rawPass;
+                $tFields['password'] = password_hash($rawPass, PASSWORD_DEFAULT);
+                $tFields['plain_password'] = null;
             }
             foreach ($tFields as $tc => $tv) {
                 if (in_array($tc, $tCols)) {
@@ -940,7 +932,8 @@ if ($method === 'PUT' || $method === 'PATCH') {
                 'avatar' => $avatar
             ];
             if (!empty($rawPass)) {
-                $sFields['plain_password'] = $rawPass;
+                $sFields['password'] = password_hash($rawPass, PASSWORD_DEFAULT);
+                $sFields['plain_password'] = null;
             }
             foreach ($sFields as $sc => $sv) {
                 if (in_array($sc, $sCols)) {

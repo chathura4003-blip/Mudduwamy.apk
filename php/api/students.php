@@ -55,7 +55,8 @@ function formatStudentRecord($s, $db = null) {
     $s['admissionNo'] = !empty($s['admissionNo']) ? $s['admissionNo'] : $customId;
     $s['role'] = 'student';
     $s['status'] = !empty($s['status']) ? $s['status'] : 'active';
-    $s['plain_password'] = !empty($s['plain_password']) ? $s['plain_password'] : (!empty($s['password']) ? $s['password'] : '123456');
+    // 🛡️ Security Guard: Never expose passwords or tokens
+    unset($s['password'], $s['plain_password'], $s['token'], $s['passwordHash']);
 
     $resolvedClassId = !empty($s['classId']) ? trim($s['classId']) : (!empty($s['pirivenaClass']) ? trim($s['pirivenaClass']) : null);
     $s['classId'] = $resolvedClassId;
@@ -126,9 +127,7 @@ if ($method === 'GET') {
 
         if ($student) {
             $formatted = formatStudentRecord($student, $db);
-            if (!$isAdmin && ($authUser['id'] !== ($student['id'] ?? '') && ($authUser['customId'] ?? '') !== ($student['customId'] ?? ''))) {
-                unset($formatted['password'], $formatted['plain_password'], $formatted['token']);
-            }
+            unset($formatted['password'], $formatted['plain_password'], $formatted['token'], $formatted['passwordHash']);
             sendJsonResponse($formatted);
         } else {
             sendJsonResponse(["error" => "Student not found"], 404);
@@ -252,9 +251,7 @@ if ($method === 'GET') {
         $processed = [];
         foreach ($students as $s) {
             $s = formatStudentRecord($s, null);
-            if (!$isAdmin) {
-                unset($s['password'], $s['plain_password'], $s['token']);
-            }
+            unset($s['password'], $s['plain_password'], $s['token'], $s['passwordHash']);
             if (!empty($s['id']) && isset($studentMap[$s['id']])) {
                 $assignedSubs = array_values(array_unique($studentMap[$s['id']]));
                 $s['subjectsAssigned'] = $assignedSubs;
@@ -324,9 +321,9 @@ if ($method === 'POST') {
         $stmt = $db->prepare("INSERT INTO students (
             id, customId, indexNumber, admissionNo, name, monkName, classId, pirivenaClass, email, phone, guardianName, guardianPhone, emergencyContact, address, dateOfBirth, enrolledSubjects, subjectsAssigned, status, joinedDate, plain_password, avatar
         ) VALUES (
-            :id, :customId, :customId, :admissionNo, :name, :monkName, :classId, :classId, :email, :phone, :guardianName, :guardianPhone, :emergencyContact, :address, :dateOfBirth, :enrolledSubjects, :enrolledSubjects, :status, :joinedDate, :plain_password, :avatar
+            :id, :customId, :customId, :admissionNo, :name, :monkName, :classId, :classId, :email, :phone, :guardianName, :guardianPhone, :emergencyContact, :address, :dateOfBirth, :enrolledSubjects, :enrolledSubjects, :status, :joinedDate, NULL, :avatar
         ) ON DUPLICATE KEY UPDATE
-            name = VALUES(name), monkName = VALUES(monkName), classId = VALUES(classId), pirivenaClass = VALUES(pirivenaClass), email = VALUES(email), phone = VALUES(phone), guardianName = VALUES(guardianName), guardianPhone = VALUES(guardianPhone), emergencyContact = VALUES(emergencyContact), address = VALUES(address), dateOfBirth = VALUES(dateOfBirth), enrolledSubjects = VALUES(enrolledSubjects), subjectsAssigned = VALUES(subjectsAssigned), status = VALUES(status), plain_password = VALUES(plain_password), avatar = VALUES(avatar)");
+            name = VALUES(name), monkName = VALUES(monkName), classId = VALUES(classId), pirivenaClass = VALUES(pirivenaClass), email = VALUES(email), phone = VALUES(phone), guardianName = VALUES(guardianName), guardianPhone = VALUES(guardianPhone), emergencyContact = VALUES(emergencyContact), address = VALUES(address), dateOfBirth = VALUES(dateOfBirth), enrolledSubjects = VALUES(enrolledSubjects), subjectsAssigned = VALUES(subjectsAssigned), status = VALUES(status), plain_password = NULL, avatar = VALUES(avatar)");
 
         $stmt->execute([
             'id' => $id,
@@ -345,7 +342,6 @@ if ($method === 'POST') {
             'enrolledSubjects' => $enrolledSubjects,
             'status' => $status,
             'joinedDate' => $joinedDate,
-            'plain_password' => $rawPassword,
             'avatar' => $avatar
         ]);
     } catch (Exception $eStud) {
@@ -376,15 +372,14 @@ if ($method === 'POST') {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
             $stmt = $db->prepare("INSERT INTO students (id, customId, name, classId, status, plain_password) 
-                VALUES (:id, :cid, :name, :cls, :status, :pp)
-                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = VALUES(plain_password)");
+                VALUES (:id, :cid, :name, :cls, :status, NULL)
+                ON DUPLICATE KEY UPDATE name = VALUES(name), plain_password = NULL");
             $stmt->execute([
                 'id' => $id,
                 'cid' => $customId,
                 'name' => $name,
                 'cls' => $classId,
-                'status' => $status,
-                'pp' => $rawPassword
+                'status' => $status
             ]);
         } catch (Exception $eRetry) {
             error_log("Failed to insert student: " . $eRetry->getMessage());
@@ -396,9 +391,9 @@ if ($method === 'POST') {
         $uStmt = $db->prepare("INSERT INTO users (
             id, username, password, monkName, name, email, phone, role, indexNumber, customId, pirivenaClass, classId, avatar, guardianName, guardianPhone, plain_password, status, subjectsAssigned
         ) VALUES (
-            :id, :username, :password, :monkName, :name, :email, :phone, 'student', :customId, :customId, :classId, :classId, :avatar, :guardianName, :guardianPhone, :plain_password, :status, :enrolledSubjects
+            :id, :username, :password, :monkName, :name, :email, :phone, 'student', :customId, :customId, :classId, :classId, :avatar, :guardianName, :guardianPhone, NULL, :status, :enrolledSubjects
         ) ON DUPLICATE KEY UPDATE
-            password = VALUES(password), monkName = VALUES(monkName), name = VALUES(name), email = VALUES(email), phone = VALUES(phone), pirivenaClass = VALUES(pirivenaClass), classId = VALUES(classId), avatar = VALUES(avatar), guardianName = VALUES(guardianName), guardianPhone = VALUES(guardianPhone), plain_password = VALUES(plain_password), status = VALUES(status), subjectsAssigned = VALUES(subjectsAssigned)");
+            password = VALUES(password), monkName = VALUES(monkName), name = VALUES(name), email = VALUES(email), phone = VALUES(phone), pirivenaClass = VALUES(pirivenaClass), classId = VALUES(classId), avatar = VALUES(avatar), guardianName = VALUES(guardianName), guardianPhone = VALUES(guardianPhone), plain_password = NULL, status = VALUES(status), subjectsAssigned = VALUES(subjectsAssigned)");
 
         $uStmt->execute([
             'id' => $id,
@@ -413,7 +408,6 @@ if ($method === 'POST') {
             'avatar' => $avatar,
             'guardianName' => $guardianName,
             'guardianPhone' => $guardianPhone,
-            'plain_password' => $rawPassword,
             'status' => $status,
             'enrolledSubjects' => $enrolledSubjects
         ]);
@@ -487,13 +481,14 @@ if ($method === 'PUT') {
 
     if (isset($body['password']) && !empty(trim($body['password']))) {
         $rawPassword = trim($body['password']);
-        $updates[] = "plain_password = :plain_password";
-        $params['plain_password'] = $rawPassword;
+        $hash = password_hash($rawPassword, PASSWORD_DEFAULT);
+        $updates[] = "password = :password";
+        $updates[] = "plain_password = NULL";
+        $params['password'] = $hash;
         
         try {
-            $hash = password_hash($rawPassword, PASSWORD_DEFAULT);
-            $uPassStmt = $db->prepare("UPDATE users SET password = :p, plain_password = :pp WHERE id = :pid1 OR customId = :pid2 OR indexNumber = :pid3");
-            $uPassStmt->execute(['p' => $hash, 'pp' => $rawPassword, 'pid1' => $pathId, 'pid2' => $pathId, 'pid3' => $pathId]);
+            $uPassStmt = $db->prepare("UPDATE users SET password = :p, plain_password = NULL WHERE id = :pid1 OR customId = :pid2 OR indexNumber = :pid3");
+            $uPassStmt->execute(['p' => $hash, 'pid1' => $pathId, 'pid2' => $pathId, 'pid3' => $pathId]);
         } catch (Exception $e) {}
     }
 

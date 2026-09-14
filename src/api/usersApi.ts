@@ -26,15 +26,16 @@ const mapUser = (u: any): User => {
   ) {
     customId = `${prefix}-2026-${fallbackNum.padStart(3, '0')}`;
   }
-  const password = u.plain_password || u.password || '123456';
   const status = u.status || 'active';
   const classId = u.classId || u.pirivenaClass || u.gradeClass || null;
+  const sanitized = { ...u };
+  delete (sanitized as any).password;
+  delete (sanitized as any).plain_password;
   return {
-    ...u,
+    ...sanitized,
     role,
     customId,
     indexNumber: customId,
-    password,
     status,
     classId,
     pirivenaClass: classId,
