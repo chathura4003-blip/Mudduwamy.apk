@@ -77,13 +77,15 @@ const mapSubject = (s: any): Subject => {
 
 export const classesApi = {
   getClasses: async () => {
-    const res = await apiClient<PirivenaClass[]>('/api/classes');
-    return Array.isArray(res) ? res.map(mapClass) : [];
+    const res = await apiClient<PirivenaClass[] | { success?: boolean; data?: PirivenaClass[]; classes?: PirivenaClass[] }>('/api/classes');
+    const items = Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.classes) ? (res as any).classes : []));
+    return items.map(mapClass);
   },
 
   getClassById: async (id: string) => {
-    const res = await apiClient<PirivenaClass>(`/api/classes/${id}`);
-    return mapClass(res);
+    const res = await apiClient<PirivenaClass | { success?: boolean; data?: PirivenaClass; class?: PirivenaClass }>(`/api/classes/${id}`);
+    const item = (res as any)?.data || (res as any)?.class || res;
+    return mapClass(item);
   },
 
   createClass: async (classData: Partial<PirivenaClass>) => {
@@ -143,8 +145,9 @@ export const classesApi = {
 export const subjectsApi = {
   getSubjects: async (classId?: string) => {
     const query = classId ? `?classId=${encodeURIComponent(classId)}` : '';
-    const res = await apiClient<Subject[]>(`/api/subjects${query}`);
-    return Array.isArray(res) ? res.map(mapSubject) : [];
+    const res = await apiClient<Subject[] | { success?: boolean; data?: Subject[]; subjects?: Subject[] }>(`/api/subjects${query}`);
+    const items = Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.subjects) ? (res as any).subjects : []));
+    return items.map(mapSubject);
   },
 
   createSubject: async (subjectData: Partial<Subject>) => {

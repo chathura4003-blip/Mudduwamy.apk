@@ -48,13 +48,15 @@ export const usersApi = {
     if (role) params.set('role', role);
     if (classId) params.set('classId', classId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient<User[]>(`/api/users${query}`);
-    return Array.isArray(res) ? res.map(mapUser) : [];
+    const res = await apiClient<User[] | { success?: boolean; data?: User[]; users?: User[] }>(`/api/users${query}`);
+    const items = Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.users) ? (res as any).users : []));
+    return items.map(mapUser);
   },
 
   getUserById: async (id: string) => {
-    const res = await apiClient<User>(`/api/users/${encodeURIComponent(id)}`);
-    return mapUser(res);
+    const res = await apiClient<User | { success?: boolean; data?: User; user?: User }>(`/api/users/${encodeURIComponent(id)}`);
+    const item = (res as any)?.data || (res as any)?.user || res;
+    return mapUser(item);
   },
 
   createUser: async (userData: Partial<User>) => {

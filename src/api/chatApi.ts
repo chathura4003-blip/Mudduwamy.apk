@@ -20,15 +20,12 @@ export interface SendMessagePayload {
 
 export const chatApi = {
   getMessages: async (roomId = 'general', sinceId?: string): Promise<ChatMessage[]> => {
-    try {
-      const url = `/api/chat?room_id=${encodeURIComponent(roomId)}${sinceId ? `&since=${encodeURIComponent(sinceId)}` : ''}`;
-      const res = await apiClient<{ success?: boolean; messages?: ChatMessage[] } | ChatMessage[]>(url);
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray(res.messages)) return res.messages;
-      return [];
-    } catch {
-      return [];
-    }
+    const url = `/api/chat?room_id=${encodeURIComponent(roomId)}${sinceId ? `&since=${encodeURIComponent(sinceId)}` : ''}`;
+    const res = await apiClient<{ success?: boolean; messages?: ChatMessage[]; data?: ChatMessage[] } | ChatMessage[]>(url);
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.messages)) return res.messages;
+    if (res && Array.isArray((res as any).data)) return (res as any).data;
+    return [];
   },
 
   sendMessage: async (payload: SendMessagePayload): Promise<ChatMessage | null> => {

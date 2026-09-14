@@ -36,7 +36,7 @@ export interface UseTeacherPortalDataReturn {
 export function useTeacherPortalData({
   classId,
   subjectId,
-  autoRefreshIntervalMs = 8000,
+  autoRefreshIntervalMs = 30000,
 }: UseTeacherPortalDataParams = {}): UseTeacherPortalDataReturn {
   const { user } = useAuth();
 
@@ -322,14 +322,22 @@ export function useTeacherPortalData({
       };
     } catch (e) {}
 
+    let debounceTimer: any = null;
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchData();
+      }, 300);
+    };
+
     const handleStorageSync = (e: StorageEvent) => {
       if (e.key === 'pirivena_admin_sync') {
-        fetchData();
+        debouncedFetch();
       }
     };
     window.addEventListener('storage', handleStorageSync);
 
-    const handleWindowSync = () => fetchData();
+    const handleWindowSync = () => debouncedFetch();
     window.addEventListener('refresh-portal-data', handleWindowSync);
     window.addEventListener('pirivena-users-updated', handleWindowSync);
     window.addEventListener('pirivena-classes-updated', handleWindowSync);
@@ -342,6 +350,7 @@ export function useTeacherPortalData({
     window.addEventListener('materials-updated', handleWindowSync);
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       cleanupPoll();
       if (bc) bc.close();
       window.removeEventListener('storage', handleStorageSync);

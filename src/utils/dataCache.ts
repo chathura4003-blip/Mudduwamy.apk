@@ -1,5 +1,4 @@
-// In-Memory Data Cache for instant zero-latency UI rendering
-import { apiClient } from '../api/apiClient';
+import { apiClient, onApiMutation } from '../api/apiClient';
 
 interface CacheEntry<T = any> {
   data: T;
@@ -24,10 +23,72 @@ function buildCacheKey(url: string, method: string = 'GET'): string {
   return `${method}:${url}:${getCacheUserSuffix()}`;
 }
 
-const SENSITIVE_URL_PATTERNS = ['/auth/me', '/backup', '/site-settings/test-'];
+const SENSITIVE_URL_PATTERNS = [
+  '/auth/me',
+  '/backup',
+  '/site-settings/test-',
+  '/passwords',
+  '/tokens',
+  '/security',
+  '/active-sessions',
+  '/force-logout',
+  '/audit-logs',
+];
 
 function isSensitiveUrl(url: string): boolean {
   return SENSITIVE_URL_PATTERNS.some((pattern) => url.includes(pattern));
+}
+
+/**
+ * Invalidate specific cache keys or all cache entries
+ */
+export function invalidateCache(urlPrefix?: string): void {
+  if (!urlPrefix) {
+    memoryCache.clear();
+    return;
+  }
+  for (const key of memoryCache.keys()) {
+    if (key.includes(urlPrefix)) {
+      memoryCache.delete(key);
+    }
+  }
+}
+
+/**
+ * Intelligent invalidation for related resources after a mutation
+ */
+export function invalidateRelatedCache(endpoint: string): void {
+  if (!endpoint) return;
+  const lower = endpoint.toLowerCase();
+  if (lower.includes('/classes')) {
+    invalidateCache('/api/classes');
+  } else if (lower.includes('/subjects')) {
+    invalidateCache('/api/subjects');
+  } else if (lower.includes('/users') || lower.includes('/students') || lower.includes('/teachers')) {
+    invalidateCache('/api/users');
+    invalidateCache('/api/students');
+    invalidateCache('/api/teachers');
+  } else if (lower.includes('/exams') || lower.includes('/submissions')) {
+    invalidateCache('/api/exams');
+    invalidateCache('/api/submissions');
+  } else if (lower.includes('/materials')) {
+    invalidateCache('/api/materials');
+  } else if (lower.includes('/broadcast-notices')) {
+    invalidateCache('/api/broadcast-notices');
+  } else if (lower.includes('/news') || lower.includes('/events') || lower.includes('/gallery')) {
+    invalidateCache('/api/news');
+    invalidateCache('/api/events');
+    invalidateCache('/api/gallery');
+  } else {
+    invalidateCache(endpoint);
+  }
+}
+
+// Automatically purge relevant cache keys whenever a mutation succeeds
+if (typeof window !== 'undefined') {
+  onApiMutation((endpoint) => {
+    invalidateRelatedCache(endpoint);
+  });
 }
 
 /**
@@ -99,53 +160,44 @@ export function getCachedData<T = any>(url: string): T | null {
   return entry ? (entry.data as T) : null;
 }
 
-/**
- * Invalidate specific cache keys or all cache entries
- */
-export function invalidateCache(urlPrefix?: string): void {
-  if (!urlPrefix) {
-    memoryCache.clear();
-    return;
-  }
-  for (const key of memoryCache.keys()) {
-    if (key.includes(urlPrefix)) {
-      memoryCache.delete(key);
-    }
-  }
-}
+let fullRefreshTimer: any = null;
 
 /**
- * Trigger complete system-wide UI refresh and instant data re-fetch across all portals & open tabs
+ * Trigger complete system-wide UI refresh and instant data re-fetch across all portals & open tabs.
+ * Dispatches the primary 'refresh-portal-data' event immediately and coalesces secondary legacy events
+ * to eliminate duplicate event storms and cascading multi-fetch render loops.
  */
 export function triggerFullAppRefresh(): void {
   invalidateCache();
 
   if (typeof window !== 'undefined') {
-    const events = [
-      'refresh-portal-data',
-      'site-data-updated',
-      'users-data-updated',
-      'database-changed',
-      'classes-updated',
-      'subjects-updated',
-      'curriculum-updated',
-      'exams-updated',
-      'materials-updated',
-      'notices-updated',
-      'admissions-updated',
-      'donations-updated',
-      'pirivena-users-updated',
-      'pirivena-classes-updated',
-      'pirivena-subjects-updated',
-      'pirivena-notices-updated',
-    ];
+    // 1. Primary authoritative refresh signal
+    window.dispatchEvent(new CustomEvent('refresh-portal-data'));
 
-    events.forEach((evtName) => {
-      try {
-        window.dispatchEvent(new CustomEvent(evtName));
-      } catch (_) {}
-    });
+    // 2. Coalesced legacy broadcast for any sub-components listening to specific events
+    if (fullRefreshTimer) clearTimeout(fullRefreshTimer);
+    fullRefreshTimer = setTimeout(() => {
+      const legacyEvents = [
+        'site-data-updated',
+        'users-data-updated',
+        'database-changed',
+        'classes-updated',
+        'subjects-updated',
+        'curriculum-updated',
+        'exams-updated',
+        'materials-updated',
+        'notices-updated',
+        'admissions-updated',
+        'donations-updated',
+      ];
+      legacyEvents.forEach((evtName) => {
+        try {
+          window.dispatchEvent(new CustomEvent(evtName));
+        } catch (_) {}
+      });
+    }, 50);
 
+    // 3. Cross-tab real-time synchronization
     if (typeof BroadcastChannel !== 'undefined') {
       try {
         const bc = new BroadcastChannel('pirivena_realtime_channel');

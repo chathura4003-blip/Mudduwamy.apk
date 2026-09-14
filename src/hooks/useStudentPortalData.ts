@@ -35,7 +35,7 @@ export interface UseStudentPortalDataReturn {
 export function useStudentPortalData({
   classId,
   subjectId,
-  autoRefreshIntervalMs = 8000,
+  autoRefreshIntervalMs = 30000,
 }: UseStudentPortalDataParams = {}): UseStudentPortalDataReturn {
   const { user } = useAuth();
 
@@ -262,18 +262,26 @@ function parseArrayField(val: any): string[] {
       };
     } catch (e) {}
 
+    let debounceTimer: any = null;
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchData();
+      }, 300);
+    };
+
     const handleStorageSync = (e: StorageEvent) => {
       if (
         e.key === 'pirivena_admin_sync' ||
         e.key === 'pirivena_classes_sync' ||
         e.key === 'pirivena_subjects_sync'
       ) {
-        fetchData();
+        debouncedFetch();
       }
     };
     window.addEventListener('storage', handleStorageSync);
 
-    const handleWindowSync = () => fetchData();
+    const handleWindowSync = () => debouncedFetch();
     window.addEventListener('refresh-portal-data', handleWindowSync);
     window.addEventListener('site-data-updated', handleWindowSync);
     window.addEventListener('users-data-updated', handleWindowSync);
@@ -288,6 +296,7 @@ function parseArrayField(val: any): string[] {
     window.addEventListener('pirivena-subjects-updated', handleWindowSync);
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       cleanupPoll();
       if (bc) bc.close();
       if (bc2) bc2.close();

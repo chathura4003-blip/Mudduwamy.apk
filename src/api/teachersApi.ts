@@ -43,13 +43,15 @@ export const teachersApi = {
     if (filters?.search) params.set('search', filters.search);
     
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient<Teacher[]>(`/api/teachers${query}`);
-    return Array.isArray(res) ? res.map(mapTeacher) : [];
+    const res = await apiClient<Teacher[] | { success?: boolean; data?: Teacher[]; teachers?: Teacher[] }>(`/api/teachers${query}`);
+    const items = Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.teachers) ? (res as any).teachers : []));
+    return items.map(mapTeacher);
   },
 
   getTeacherById: async (id: string) => {
-    const res = await apiClient<Teacher>(`/api/teachers/${encodeURIComponent(id)}`);
-    return mapTeacher(res);
+    const res = await apiClient<Teacher | { success?: boolean; data?: Teacher; teacher?: Teacher }>(`/api/teachers/${encodeURIComponent(id)}`);
+    const item = (res as any)?.data || (res as any)?.teacher || res;
+    return mapTeacher(item);
   },
 
   createTeacher: async (teacherData: Partial<Teacher>) => {

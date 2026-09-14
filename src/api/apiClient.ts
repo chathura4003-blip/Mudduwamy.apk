@@ -40,6 +40,35 @@ export function notifyUnauthorized() {
   onUnauthorizedListeners.forEach((fn) => fn());
 }
 
+export type ApiMutationHandler = (endpoint: string, method: string) => void;
+const onApiMutationListeners: Set<ApiMutationHandler> = new Set();
+
+export function onApiMutation(callback: ApiMutationHandler): () => void {
+  onApiMutationListeners.add(callback);
+  return () => {
+    onApiMutationListeners.delete(callback);
+  };
+}
+
+export function notifyApiMutation(endpoint: string, method: string) {
+  onApiMutationListeners.forEach((fn) => {
+    try {
+      fn(endpoint, method);
+    } catch (_) {}
+  });
+}
+
+/**
+ * Standardize unwrapping of API response envelopes ({ success: true, data: T })
+ * while remaining fully backward-compatible with raw data payloads.
+ */
+export function unwrapApiResponse<T = any>(res: any): T {
+  if (res && typeof res === 'object' && 'success' in res && 'data' in res && res.data !== undefined) {
+    return res.data as T;
+  }
+  return res as T;
+}
+
 /**
  * Clean, production-grade API Client that communicates directly with
  * backend database APIs with comprehensive network resilience.
@@ -323,6 +352,11 @@ async function executeRequest<T = any>(
 
       const errorCode = (errData?.code || errData?.error && isNaN(Number(errData.error))) ? errData.error : getErrorCodeForStatus(response.status);
       throw new ApiError(getStatusErrorMessage(response.status, errMessage), response.status, errorCode, errData);
+    }
+
+    const reqMethod = (options.method || 'GET').toUpperCase();
+    if (reqMethod !== 'GET') {
+      notifyApiMutation(endpoint, reqMethod);
     }
 
     if (response.status === 204) {

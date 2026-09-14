@@ -49,13 +49,15 @@ export const studentsApi = {
     }
     
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient<Student[]>(`/api/students${query}`);
-    return Array.isArray(res) ? res.map(mapStudent) : [];
+    const res = await apiClient<Student[] | { success?: boolean; data?: Student[]; students?: Student[] }>(`/api/students${query}`);
+    const items = Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.students) ? (res as any).students : []));
+    return items.map(mapStudent);
   },
 
   getStudentById: async (id: string) => {
-    const res = await apiClient<Student>(`/api/students/${encodeURIComponent(id)}`);
-    return mapStudent(res);
+    const res = await apiClient<Student | { success?: boolean; data?: Student; student?: Student }>(`/api/students/${encodeURIComponent(id)}`);
+    const item = (res as any)?.data || (res as any)?.student || res;
+    return mapStudent(item);
   },
 
   createStudent: async (studentData: Partial<Student>) => {

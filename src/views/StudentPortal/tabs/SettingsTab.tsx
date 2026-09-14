@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Settings,
@@ -59,6 +59,15 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const { appTextSize, setAppTextSize } = useAccessibility();
   const appVersion = useAppVersion();
   const toast = useToast();
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinLockEnabled, setPinLockEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('pirivena_app_lock_enabled') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const textSizeOptions: { id: TextSizeOption; labelSi: string; labelEn: string; scale: string }[] = [
     { id: 'small', labelSi: 'කුඩා (90%)', labelEn: 'Small (90%)', scale: '0.90x' },
@@ -389,16 +398,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             type="button"
             onClick={() => {
               triggerHaptic('selection');
-              const current = localStorage.getItem('pirivena_app_lock_enabled') === 'true';
-              if (!current) {
-                const pin = window.prompt(isSi ? 'නව 4-Digit PIN අංකයක් ඇතුළත් කරන්න:' : 'Enter a 4-digit PIN:');
-                if (pin && pin.length >= 4) {
-                  localStorage.setItem('pirivena_app_lock_pin', pin);
-                  localStorage.setItem('pirivena_app_lock_enabled', 'true');
-                  toast.success(isSi ? '✓ PIN Lock සක්‍රීය විය!' : '✓ PIN Lock enabled!');
-                }
+              if (!pinLockEnabled) {
+                setPinInput('');
+                setShowPinModal(true);
               } else {
                 localStorage.setItem('pirivena_app_lock_enabled', 'false');
+                setPinLockEnabled(false);
                 toast.info(isSi ? 'PIN Lock අක්‍රීය කරන ලදී.' : 'PIN Lock disabled.');
               }
             }}
@@ -413,7 +418,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   {isSi ? 'PIN ආරක්ෂණය සැකසීම' : 'Setup PIN Lock'}
                 </h4>
                 <p className="text-[10px] text-slate-500">
-                  {localStorage.getItem('pirivena_app_lock_enabled') === 'true'
+                  {pinLockEnabled
                     ? (isSi ? 'සක්‍රීයයි (Active)' : 'Active')
                     : (isSi ? 'අක්‍රීයයි (Inactive)' : 'Inactive')}
                 </p>
@@ -537,6 +542,67 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
           <span>© {new Date().getFullYear()} Sri Sumana Maha Pirivena ERP. All rights reserved.</span>
         </div>
       </div>
+
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-2xl border border-slate-200 dark:border-stone-800 animate-scale-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  {isSi ? 'PIN අංකය සකසන්න' : 'Setup Security PIN'}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {isSi ? 'යෙදුම විවෘත කිරීමට ඉලක්කම් 4ක PIN එකක් ඇතුළත් කරන්න' : 'Enter a 4-digit PIN to lock your app session'}
+                </p>
+              </div>
+            </div>
+
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+              placeholder="••••"
+              autoFocus
+              className="w-full text-center text-2xl tracking-[0.5em] font-mono py-3 px-4 rounded-2xl bg-slate-50 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 mb-5"
+            />
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPinModal(false);
+                  setPinInput('');
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-stone-300 font-bold text-xs hover:bg-slate-200 dark:hover:bg-stone-700 transition cursor-pointer"
+              >
+                {isSi ? 'අවලංගු කරන්න' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                disabled={pinInput.length < 4}
+                onClick={() => {
+                  if (pinInput.length >= 4) {
+                    localStorage.setItem('pirivena_app_lock_pin', pinInput);
+                    localStorage.setItem('pirivena_app_lock_enabled', 'true');
+                    setPinLockEnabled(true);
+                    setShowPinModal(false);
+                    setPinInput('');
+                    toast.success(isSi ? '✓ PIN Lock සාර්ථකව සක්‍රීය විය!' : '✓ PIN Lock enabled successfully!');
+                  }
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-stone-900 font-bold text-xs transition cursor-pointer"
+              >
+                {isSi ? 'සුරකින්න' : 'Save PIN'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

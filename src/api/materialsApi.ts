@@ -2,12 +2,13 @@ import { apiClient } from './apiClient';
 import type { StudyMaterial } from '../types';
 
 export const materialsApi = {
-  getMaterials: (classId?: string, subjectId?: string) => {
+  getMaterials: async (classId?: string, subjectId?: string) => {
     const params = new URLSearchParams();
     if (classId && classId !== 'all') params.set('classId', classId);
     if (subjectId && subjectId !== 'all') params.set('subjectId', subjectId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiClient<StudyMaterial[]>(`/api/materials${query}`);
+    const res = await apiClient<StudyMaterial[] | { success?: boolean; data?: StudyMaterial[]; materials?: StudyMaterial[] }>(`/api/materials${query}`);
+    return Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.materials) ? (res as any).materials : []));
   },
 
   createMaterial: (data: Partial<StudyMaterial>) =>

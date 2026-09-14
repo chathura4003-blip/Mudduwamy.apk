@@ -3,21 +3,19 @@ import type { BroadcastNotice } from '../types';
 
 export const broadcastApi = {
   getNotices: async () => {
-    try {
-      const data = await apiClient<BroadcastNotice[] | { error?: string; message?: string; notices?: BroadcastNotice[]; data?: BroadcastNotice[] } >('/api/broadcast-notices');
-      if (Array.isArray(data)) {
-        return data;
-      }
-      if (Array.isArray(data?.notices)) {
-        return data.notices;
-      }
-      if (Array.isArray(data?.data)) {
-        return data.data;
-      }
-      return [];
-    } catch (error) {
-      return [];
+    const data = await apiClient<
+      BroadcastNotice[] | { error?: string; message?: string; notices?: BroadcastNotice[]; data?: BroadcastNotice[] }
+    >('/api/broadcast-notices');
+    if (Array.isArray(data)) {
+      return data;
     }
+    if (Array.isArray((data as any)?.notices)) {
+      return (data as any).notices;
+    }
+    if (Array.isArray((data as any)?.data)) {
+      return (data as any).data;
+    }
+    return [];
   },
 
   createNotice: (data: Partial<BroadcastNotice>) =>

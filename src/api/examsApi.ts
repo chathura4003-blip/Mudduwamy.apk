@@ -2,15 +2,19 @@ import { apiClient } from './apiClient';
 import type { Exam, ExamSubmission } from '../types';
 
 export const examsApi = {
-  getExams: (classId?: string, subjectId?: string) => {
+  getExams: async (classId?: string, subjectId?: string) => {
     const params = new URLSearchParams();
     if (classId && classId !== 'all') params.set('classId', classId);
     if (subjectId && subjectId !== 'all') params.set('subjectId', subjectId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiClient<Exam[]>(`/api/exams${query}`);
+    const res = await apiClient<Exam[] | { success?: boolean; data?: Exam[]; exams?: Exam[] }>(`/api/exams${query}`);
+    return Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.exams) ? (res as any).exams : []));
   },
 
-  getExamById: (id: string) => apiClient<Exam>(`/api/exams/${id}`),
+  getExamById: async (id: string) => {
+    const res = await apiClient<Exam | { success?: boolean; data?: Exam; exam?: Exam }>(`/api/exams/${id}`);
+    return (res as any)?.data || (res as any)?.exam || res;
+  },
 
   createExam: (examData: Partial<Exam>) =>
     apiClient<Exam>('/api/exams', {
@@ -29,14 +33,15 @@ export const examsApi = {
       method: 'DELETE',
     }),
 
-  getSubmissions: (examId?: string, studentId?: string, classId?: string, subjectId?: string) => {
+  getSubmissions: async (examId?: string, studentId?: string, classId?: string, subjectId?: string) => {
     const params = new URLSearchParams();
     if (examId) params.set('examId', examId);
     if (studentId) params.set('studentId', studentId);
     if (classId && classId !== 'all') params.set('classId', classId);
     if (subjectId && subjectId !== 'all') params.set('subjectId', subjectId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    return apiClient<ExamSubmission[]>(`/api/submissions${query}`);
+    const res = await apiClient<ExamSubmission[] | { success?: boolean; data?: ExamSubmission[]; submissions?: ExamSubmission[] }>(`/api/submissions${query}`);
+    return Array.isArray(res) ? res : (Array.isArray((res as any)?.data) ? (res as any).data : (Array.isArray((res as any)?.submissions) ? (res as any).submissions : []));
   },
 
   submitExam: (examId: string, submissionData: any) =>
