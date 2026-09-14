@@ -110,7 +110,7 @@ function parseArrayField(val: any): string[] {
     const combinedKeys = new Set([...classSubjSet, ...explicitSet]);
 
     if (combinedKeys.size > 0) {
-      const matched = subjects.filter((s) => {
+      return subjects.filter((s) => {
         const sKeys = [
           s.id,
           s.code,
@@ -123,19 +123,10 @@ function parseArrayField(val: any): string[] {
           .map((k) => String(k).trim());
         return sKeys.some((k) => combinedKeys.has(k));
       });
-      if (matched.length > 0) return matched;
     }
 
-    if (!studentClass || classSubjs.length === 0) {
-      return subjects;
-    }
-
-    return subjects.filter((s) => {
-      const sKeys = [s.id, s.code, s.name, s.nameSinhala, (s as any).subjectName, (s as any).subjectNameSinhala]
-        .filter(Boolean)
-        .map((k) => String(k).trim());
-      return sKeys.some((k) => classSubjSet.has(k));
-    });
+    // Strict Security: No unsafe fallback to all subjects when authorization data is missing
+    return [];
   }, [subjects, studentClass, user]);
 
   // Verify session credentials & authorization for the requested classId & subjectId parameters
@@ -276,24 +267,25 @@ function parseArrayField(val: any): string[] {
 
   // Filtered available exams strictly authorized for this student
   const availableStudentExams = useMemo(() => {
+    if (!user) return [];
+    if (user.role === 'admin' || user.role === 'superadmin') return exams;
+
     const studentClassKeys = new Set(
       [
         user?.classId,
         user?.pirivenaClass,
-        (user as any)?.classLevel,
-        (user as any)?.gradeLevel,
-        (user as any)?.educationCategory,
         studentClass?.id,
         studentClass?.code,
         studentClass?.name,
         studentClass?.nameSinhala,
         (studentClass as any)?.className,
         (studentClass as any)?.classNameSinhala,
-        (studentClass as any)?.levelName,
       ]
         .filter(Boolean)
         .map((k) => String(k).trim().toLowerCase())
     );
+
+    if (studentClassKeys.size === 0) return [];
 
     const authorizedSubjectKeys = new Set(
       availableSubjects.flatMap((s) =>
@@ -313,59 +305,24 @@ function parseArrayField(val: any): string[] {
         (e.published === undefined && e.status !== 'draft');
       if (!isPub) return false;
 
-      const rawClass = String(e.classId || (e as any).gradeClass || '').trim();
-      const lowerClass = rawClass.toLowerCase();
+      const rawClass = String(e.classId || (e as any).gradeClass || '').trim().toLowerCase();
+      const isUniversalClass = !rawClass || rawClass === 'all' || rawClass === 'all classes' || rawClass === 'general' || rawClass.includes('සියලු');
+      const matchesClass = isUniversalClass || studentClassKeys.has(rawClass);
+      if (!matchesClass) return false;
 
-      let matchesClass = false;
-      if (!rawClass || lowerClass === 'all' || lowerClass === 'all classes' || lowerClass.includes('සියලු') || lowerClass === 'general') {
-        matchesClass = true;
-      } else if (studentClassKeys.size > 0) {
-        matchesClass = studentClassKeys.has(lowerClass);
-        if (!matchesClass) {
-          for (const key of studentClassKeys) {
-            if (key && (lowerClass.includes(key) || key.includes(lowerClass))) {
-              matchesClass = true;
-              break;
-            }
-          }
-        }
-      } else {
-        matchesClass = true;
-      }
+      const rawSubj = String(e.subjectId || (e as any).subject || '').trim().toLowerCase();
+      const isUniversalSubj = !rawSubj || rawSubj === 'all' || rawSubj === 'all subjects' || rawSubj === 'general' || rawSubj.includes('සියලු');
+      const matchesSubject = isUniversalSubj || authorizedSubjectKeys.has(rawSubj);
 
-      const rawSubj = String(e.subjectId || (e as any).subject || '').trim();
-      const lowerSubj = rawSubj.toLowerCase();
-
-      let matchesSubject = false;
-      if (
-        !rawSubj ||
-        lowerSubj === 'all' ||
-        lowerSubj === 'all subjects' ||
-        lowerSubj === 'general' ||
-        lowerSubj.includes('සියලු') ||
-        lowerSubj.includes('පොදු')
-      ) {
-        matchesSubject = true;
-      } else if (authorizedSubjectKeys.size > 0) {
-        matchesSubject = authorizedSubjectKeys.has(lowerSubj);
-        if (!matchesSubject) {
-          for (const key of authorizedSubjectKeys) {
-            if (key && (lowerSubj.includes(key) || key.includes(lowerSubj))) {
-              matchesSubject = true;
-              break;
-            }
-          }
-        }
-      } else {
-        matchesSubject = true;
-      }
-
-      return matchesClass && matchesSubject;
+      return matchesSubject;
     });
   }, [exams, user, studentClass, availableSubjects]);
 
   // Filtered available study materials strictly authorized for this student
   const availableStudentMaterials = useMemo(() => {
+    if (!user) return [];
+    if (user.role === 'admin' || user.role === 'superadmin') return materials;
+
     const studentClassKeys = new Set(
       [
         user?.classId,
@@ -378,30 +335,33 @@ function parseArrayField(val: any): string[] {
         (studentClass as any)?.classNameSinhala,
       ]
         .filter(Boolean)
-        .map((k) => String(k).trim())
+        .map((k) => String(k).trim().toLowerCase())
     );
+
+    if (studentClassKeys.size === 0) return [];
 
     const authorizedSubjectKeys = new Set(
       availableSubjects.flatMap((s) =>
         [s.id, s.code, s.name, s.nameSinhala, (s as any).subjectName, (s as any).subjectNameSinhala]
           .filter(Boolean)
-          .map((k) => String(k).trim())
+          .map((k) => String(k).trim().toLowerCase())
       )
     );
 
     return materials.filter((m) => {
-      const mClass = String(m.classId || '').trim();
-      const isUniversal = !mClass || mClass.toLowerCase() === 'all';
-      if (isUniversal) return true;
-
-      if (studentClassKeys.size > 0 && !studentClassKeys.has(mClass)) {
+      const mClass = String(m.classId || '').trim().toLowerCase();
+      const isUniversal = !mClass || mClass === 'all' || mClass === 'all classes' || mClass.includes('සියලු');
+      if (!isUniversal && !studentClassKeys.has(mClass)) {
         return false;
       }
 
-      const mSubj = String(m.subjectId || '').trim();
-      if (!mSubj || mSubj.toLowerCase() === 'all') return true;
+      const mSubj = String(m.subjectId || '').trim().toLowerCase();
+      const isUniversalSubj = !mSubj || mSubj === 'all' || mSubj === 'all subjects' || mSubj.includes('සියලු');
+      if (!isUniversalSubj && !authorizedSubjectKeys.has(mSubj)) {
+        return false;
+      }
 
-      return authorizedSubjectKeys.has(mSubj);
+      return true;
     });
   }, [materials, user, studentClass, availableSubjects]);
 

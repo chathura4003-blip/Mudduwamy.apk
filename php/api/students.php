@@ -191,18 +191,12 @@ if ($method === 'GET') {
                 $tStmt->execute(['tid1' => $authUser['id'], 'tid2' => $authUser['customId'] ?? $authUser['id']]);
                 $allowedClasses = $tStmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
 
-                // Also include classesAssigned from user / teacher record
-                $userAssignedClasses = normalizeStudentArrayField($authUser['classesAssigned'] ?? null);
-                $allowedClasses = array_unique(array_merge($allowedClasses, $userAssignedClasses));
-
-                // Also include classes where this teacher is the in-charge teacher
+                // Also include classes where this teacher is explicitly teacherInChargeId
                 try {
-                    $cStmt = $db->prepare("SELECT id, code, name, nameSinhala FROM classes WHERE teacherInChargeId = :tid1 OR teacherInChargeId = :tid2 OR classTeacher = :tname1 OR classTeacher = :tname2");
+                    $cStmt = $db->prepare("SELECT id, code, name, nameSinhala FROM classes WHERE teacherInChargeId = :tid1 OR teacherInChargeId = :tid2");
                     $cStmt->execute([
                         'tid1' => $authUser['id'],
-                        'tid2' => $authUser['customId'] ?? $authUser['id'],
-                        'tname1' => $authUser['name'] ?? '',
-                        'tname2' => $authUser['monkName'] ?? ''
+                        'tid2' => $authUser['customId'] ?? $authUser['id']
                     ]);
                     $inChargeClasses = $cStmt->fetchAll();
                     foreach ($inChargeClasses as $ic) {
@@ -235,17 +229,17 @@ if ($method === 'GET') {
                     } catch (Exception $eExp) {}
                     $allowedClasses = array_values(array_unique($expandedClassKeys));
 
-                    $filtered = array_filter($students, function($s) use ($allowedClasses, $authUser) {
+                    $filtered = array_filter($students, function($s) use ($allowedClasses) {
                         $studentClass = trim($s['classId'] ?? $s['pirivenaClass'] ?? '');
-                        $isClassMatch = !empty($studentClass) && in_array($studentClass, $allowedClasses);
-                        $isTeacherMatch = !empty($s['classTeacherId']) && ($s['classTeacherId'] === $authUser['id'] || $s['classTeacherId'] === ($authUser['customId'] ?? ''));
-                        return $isClassMatch || $isTeacherMatch;
+                        return !empty($studentClass) && in_array($studentClass, $allowedClasses);
                     });
-                    if (!empty($filtered)) {
-                        $students = array_values($filtered);
-                    }
+                    $students = array_values($filtered);
+                } else {
+                    $students = [];
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                $students = [];
+            }
         }
 
         // Ultra-Fast Batch Fetch for Student Subjects

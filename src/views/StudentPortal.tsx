@@ -168,8 +168,9 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     subjectId: matSubjectFilter !== 'all' ? matSubjectFilter : undefined,
   });
 
-  // Fetch Library Books
+  // Fetch Library Books only when student navigates to the Library tab
   useEffect(() => {
+    if (activeTab !== 'library') return;
     let isMounted = true;
     const fetchBooks = async () => {
       setIsLibraryLoading(true);
@@ -186,7 +187,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeTab]);
 
   const [viewingSubmissionReview, setViewingSubmissionReview] = useState<any | null>(null);
 

@@ -1096,7 +1096,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 {assignedClasses.length > 0 ? (
                   assignedClasses.map((cls) => {
                     const classStudents = assignedStudents.filter(
-                      (s) => s.classId === cls.id || s.classTeacherId === user?.id
+                      (s) => s.classId === cls.id || s.classId === cls.code
                     );
                     const classMonks = classStudents.filter((s) => s.monkStatus === 'monk').length;
                     const classLays = classStudents.filter((s) => s.monkStatus === 'lay').length;

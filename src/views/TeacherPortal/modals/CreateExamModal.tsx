@@ -514,9 +514,10 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                         className="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs font-bold text-amber-950 bg-white"
                       >
                         {(() => {
-                          const classSubjects = getAssignedSubjectsForClass ? getAssignedSubjectsForClass(examClassId) : assignedSubjects;
-                          const finalOptions = classSubjects.length > 0 ? classSubjects : assignedSubjects;
-                          return finalOptions.map((s, idx) => (
+                          const classSubjects = (examClassId && examClassId !== 'all' && getAssignedSubjectsForClass)
+                            ? getAssignedSubjectsForClass(examClassId)
+                            : assignedSubjects;
+                          return classSubjects.map((s, idx) => (
                             <option key={`ex-sbj-opt-${s.id || idx}-${idx}`} value={s.id}>
                               {s.name} ({s.code})
                             </option>

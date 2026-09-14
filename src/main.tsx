@@ -35,23 +35,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Ensure window.fetch has a setter in iframe environments to avoid getter-only assignment errors
-if (typeof window !== 'undefined' && window.fetch) {
-  try {
-    let currentFetch = window.fetch;
-    Object.defineProperty(window, 'fetch', {
-      get: () => currentFetch,
-      set: (val) => {
-        currentFetch = val;
-      },
-      configurable: true,
-      enumerable: true,
-    });
-  } catch (e) {
-    // Ignore if already patched or non-configurable
-  }
-}
-
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';

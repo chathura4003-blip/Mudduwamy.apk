@@ -7,7 +7,7 @@ android {
         applicationId "lk.srisumana.erp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        def vCode = 100
+        def vCode = 385
         if (project.hasProperty("VERSION_CODE")) {
             vCode = Integer.parseInt(project.property("VERSION_CODE").toString())
         } else if (System.getenv("VERSION_CODE")) {
@@ -15,7 +15,7 @@ android {
         }
         versionCode vCode
 
-        def vName = "1.0.0"
+        def vName = "3.8.5"
         if (project.hasProperty("VERSION_NAME")) {
             vName = project.property("VERSION_NAME").toString()
         } else if (System.getenv("VERSION_NAME")) {
@@ -77,6 +77,22 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+afterEvaluate {
+    android {
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_17
+            targetCompatibility JavaVersion.VERSION_17
+        }
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')

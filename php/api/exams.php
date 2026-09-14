@@ -253,29 +253,49 @@ if ($method === 'GET' && !$subAction) {
                     }
                 }
 
-                $formatted = array_values(array_filter($formatted, function($ex) use ($studentClassId, $assignedSubIds, $matchClass, $matchSubject) {
-                    $exClass = $ex['gradeClass'] ?? $ex['classId'] ?? '';
-                    $exSubj = $ex['subject'] ?? $ex['subjectId'] ?? '';
-
-                    // Check if class matches (including universal 'All')
-                    if ($studentClassId && !empty($exClass) && !$matchClass($exClass, $studentClassId)) {
-                        return false;
-                    }
-
-                    // Check if subject is assigned to student (if student has subject restrictions)
-                    if (!empty($assignedSubIds)) {
-                        $matchesAnyAssignedSub = false;
-                        foreach ($assignedSubIds as $subId) {
-                            if ($matchSubject($exSubj, $subId)) {
-                                $matchesAnyAssignedSub = true;
-                                break;
-                            }
+                // If assigned subjects empty, try resolving from student's enrolled class
+                if (empty($assignedSubIds) && $studentClassId) {
+                    try {
+                        $cStmt = $db->prepare("SELECT subjects FROM classes WHERE id = :c1 OR code = :c2 LIMIT 1");
+                        $cStmt->execute([':c1' => $studentClassId, ':c2' => $studentClassId]);
+                        $cRow = $cStmt->fetch();
+                        if ($cRow && !empty($cRow['subjects'])) {
+                            $dec = json_decode($cRow['subjects'], true);
+                            if (is_array($dec)) $assignedSubIds = $dec;
                         }
-                        return $matchesAnyAssignedSub;
-                    }
-                    return true;
-                }));
-            } catch (Exception $e) {}
+                    } catch (Exception $eC) {}
+                }
+
+                if (empty($studentClassId) && empty($assignedSubIds)) {
+                    // Student has neither an enrolled class nor assigned subjects -> strictly return empty
+                    $formatted = [];
+                } else {
+                    $formatted = array_values(array_filter($formatted, function($ex) use ($studentClassId, $assignedSubIds, $matchClass, $matchSubject) {
+                        $exClass = $ex['gradeClass'] ?? $ex['classId'] ?? '';
+                        $exSubj = $ex['subject'] ?? $ex['subjectId'] ?? '';
+
+                        // Check if class matches (including universal 'All')
+                        if ($studentClassId && !empty($exClass) && !$matchClass($exClass, $studentClassId)) {
+                            return false;
+                        }
+
+                        // Check if subject is assigned to student
+                        if (!empty($assignedSubIds)) {
+                            $matchesAnyAssignedSub = false;
+                            foreach ($assignedSubIds as $subId) {
+                                if ($matchSubject($exSubj, $subId)) {
+                                    $matchesAnyAssignedSub = true;
+                                    break;
+                                }
+                            }
+                            return $matchesAnyAssignedSub;
+                        }
+                        return false;
+                    }));
+                }
+            } catch (Exception $e) {
+                $formatted = [];
+            }
         }
 
         // Apply explicit query params if provided

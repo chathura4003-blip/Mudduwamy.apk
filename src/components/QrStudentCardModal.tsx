@@ -86,19 +86,27 @@ export const QrStudentCardModal: React.FC<QrStudentCardModalProps> = ({
         ? `${currentUser.educationCategory}`
         : 'මූලික පිරිවෙන් පන්තිය (Primary Pirivena Grade)';
 
-  // Resolve teacher subjects
-  const resolvedSubjects = (currentUser.subjectsTaught || [])
-    .map((subIdOrName) => {
-      const found = subjectList.find((s) => s.id === subIdOrName || s.name === subIdOrName);
-      return found ? (found.nameSinhala || found.name) : subIdOrName;
+  // Resolve teacher subjects from teacherAssignments
+  const teacherAssignments = currentUser.teacherAssignments || [];
+  const assignedSubjectIds = new Set<string>();
+  const assignedClassIds = new Set<string>();
+  teacherAssignments.forEach((a) => {
+    if (a.subjectId) assignedSubjectIds.add(String(a.subjectId).trim());
+    if (a.classId) assignedClassIds.add(String(a.classId).trim());
+  });
+
+  const resolvedSubjects = Array.from(assignedSubjectIds)
+    .map((subId) => {
+      const found = subjectList.find((s) => s.id === subId || s.code === subId || s.name === subId);
+      return found ? (found.nameSinhala || found.name) : subId;
     })
     .filter(Boolean);
 
-  // Resolve assigned classes for teacher
-  const resolvedClasses = (currentUser.classesAssigned || [])
-    .map((clsIdOrName) => {
-      const found = classList.find((c) => c.id === clsIdOrName || c.name === clsIdOrName);
-      return found ? (found.nameSinhala || found.name) : clsIdOrName;
+  // Resolve assigned classes for teacher from teacherAssignments
+  const resolvedClasses = Array.from(assignedClassIds)
+    .map((clsId) => {
+      const found = classList.find((c) => c.id === clsId || c.code === clsId || c.name === clsId);
+      return found ? (found.nameSinhala || found.name) : clsId;
     })
     .filter(Boolean);
 

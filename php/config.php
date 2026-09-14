@@ -976,20 +976,6 @@ function isTeacherAssignedToClassAndSubject($teacherIdentifier, $classIdentifier
         $rows = $stmt->fetchAll();
 
         if (empty($rows)) {
-            // Fallback check on users table if legacy record
-            $uStmt = $db->prepare("SELECT classesAssigned, subjectsTaught FROM users WHERE id = :u1 OR customId = :u2");
-            $uStmt->execute([':u1' => $tId, ':u2' => $tId]);
-            $uRow = $uStmt->fetch();
-            if ($uRow) {
-                $cList = normalizeUserArrayField($uRow['classesAssigned'] ?? null);
-                $sList = normalizeUserArrayField($uRow['subjectsTaught'] ?? null);
-                $cMatch = in_array($cId, $cList, true) || in_array('all', array_map('strtolower', $cList), true);
-                if (!$cMatch) return false;
-                if (!empty($sId) && strtolower($sId) !== 'all') {
-                    return in_array($sId, $sList, true) || in_array('all', array_map('strtolower', $sList), true);
-                }
-                return true;
-            }
             return false;
         }
 

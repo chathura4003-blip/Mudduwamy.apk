@@ -322,19 +322,24 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
                 c.code === user.classId
             );
 
+            const teacherAssignments = Array.isArray(user.teacherAssignments) ? user.teacherAssignments : [];
+            const teacherAssignedClassIds = new Set(teacherAssignments.map((ta) => ta.classId).filter(Boolean));
+            const teacherAssignedSubjectIds = new Set(teacherAssignments.map((ta) => ta.subjectId).filter(Boolean));
+
             const teacherClassesInCharge = classes.filter(
-              (c) => c.teacherInChargeId === user.id || (user.classesAssigned && user.classesAssigned.includes(c.id))
+              (c) => c.teacherInChargeId === user.id || c.teacherInChargeId === user.customId
             );
             const teacherAllClasses = classes.filter(
               (c) =>
                 c.teacherInChargeId === user.id ||
-                (user.classesAssigned && user.classesAssigned.includes(c.id)) ||
-                (user.teacherAssignments && user.teacherAssignments.some((ta) => ta.classId === c.id))
+                c.teacherInChargeId === user.customId ||
+                teacherAssignedClassIds.has(c.id) ||
+                (c.code && teacherAssignedClassIds.has(c.code))
             );
             const teacherSubjectsTaught = subjects.filter(
               (s) =>
-                (user.subjectsTaught && (user.subjectsTaught.includes(s.id) || user.subjectsTaught.includes(s.name) || user.subjectsTaught.includes(s.nameSinhala))) ||
-                (user.teacherAssignments && user.teacherAssignments.some((ta) => ta.subjectId === s.id))
+                teacherAssignedSubjectIds.has(s.id) ||
+                (s.code && teacherAssignedSubjectIds.has(s.code))
             );
 
             return (

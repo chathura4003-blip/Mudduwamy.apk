@@ -159,15 +159,12 @@ export const ClassesTab: React.FC<ClassesTabProps> = React.memo(({
     const map = new Map<string, User[]>();
     for (const subj of subjects) {
       const matching = teachers.filter((t) => {
-        const taughtList = t.subjectsTaught || [];
-        const assignments = t.teacherAssignments?.map((a) => a.subjectId) || [];
+        const assignments = Array.isArray(t.teacherAssignments) ? t.teacherAssignments : [];
+        const assignedSubjIds = new Set(assignments.map((a) => a.subjectId).filter(Boolean));
         return (
-          taughtList.includes(subj.id) ||
-          taughtList.includes(subj.code || '') ||
-          taughtList.includes(subj.name || '') ||
-          assignments.includes(subj.id) ||
-          assignments.includes(subj.code || '') ||
-          assignments.includes(subj.name || '')
+          assignedSubjIds.has(subj.id) ||
+          (subj.code && assignedSubjIds.has(subj.code)) ||
+          (subj.name && assignedSubjIds.has(subj.name))
         );
       });
       map.set(subj.id, matching);

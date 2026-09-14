@@ -97,18 +97,12 @@ if ($method === 'GET') {
                 $assignments = $asgnStmt->fetchAll();
 
                 if (empty($assignments)) {
-                    // Fallback to teacher's classesAssigned/subjectsTaught in users table
-                    $uClasses = normalizeUserArrayField($authUser['classesAssigned'] ?? null);
-                    $uSubjects = normalizeUserArrayField($authUser['subjectsTaught'] ?? null);
-                    if (!empty($uClasses)) {
-                        $clsIn = implode("','", array_map('addslashes', $uClasses));
-                        $sql .= " AND (es.classId IN ('$clsIn') OR e.classId IN ('$clsIn') OR e.gradeClass IN ('$clsIn'))";
-                    } else {
-                        // No assignments at all -> return empty list
-                        sendJsonResponse([]);
-                    }
-                } else {
-                    $orClauses = [];
+                    // No teacher_assignments tuples -> strictly return empty list
+                    sendJsonResponse([]);
+                    exit;
+                }
+
+                $orClauses = [];
                     $idx = 0;
                     foreach ($assignments as $asgn) {
                         $c = trim($asgn['classId'] ?? '');

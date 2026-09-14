@@ -153,36 +153,28 @@ export const ExamReviewsTab: React.FC<ExamReviewsTabProps> = React.memo(({
   const availableClasses = useMemo(() => {
     return classes.filter((cls) => {
       if (!selectedTeacher) return true;
-      const assignedFromList =
-        selectedTeacher.teacherAssignments?.some(
-          (a) => a.classId === cls.id || a.classId === cls.code || a.classId === cls.name
-        ) || false;
-      const isAssigned =
-        assignedFromList ||
-        (selectedTeacher.classesAssigned &&
-          (selectedTeacher.classesAssigned.includes(cls.id) ||
-            selectedTeacher.classesAssigned.includes(cls.code) ||
-            selectedTeacher.classesAssigned.includes(cls.name))) ||
+      const assignments = Array.isArray(selectedTeacher.teacherAssignments) ? selectedTeacher.teacherAssignments : [];
+      const assignedClassIds = new Set(assignments.map((a) => a.classId).filter(Boolean));
+      return (
+        assignedClassIds.has(cls.id) ||
+        (cls.code && assignedClassIds.has(cls.code)) ||
+        (cls.name && assignedClassIds.has(cls.name)) ||
         cls.teacherInChargeId === selectedTeacher.id ||
-        cls.teacherInChargeId === selectedTeacher.customId;
-      return isAssigned;
+        cls.teacherInChargeId === selectedTeacher.customId
+      );
     });
   }, [classes, selectedTeacher]);
 
   const availableSubjects = useMemo(() => {
     return subjects.filter((subj) => {
       if (!selectedTeacher) return true;
-      const taughtFromList =
-        selectedTeacher.teacherAssignments?.some(
-          (a) => a.subjectId === subj.id || a.subjectId === subj.code || a.subjectId === subj.name
-        ) || false;
-      const isTaught =
-        taughtFromList ||
-        (selectedTeacher.subjectsTaught &&
-          (selectedTeacher.subjectsTaught.includes(subj.id) ||
-            selectedTeacher.subjectsTaught.includes(subj.code) ||
-            selectedTeacher.subjectsTaught.includes(subj.name)));
-      return isTaught;
+      const assignments = Array.isArray(selectedTeacher.teacherAssignments) ? selectedTeacher.teacherAssignments : [];
+      const assignedSubjIds = new Set(assignments.map((a) => a.subjectId).filter(Boolean));
+      return (
+        assignedSubjIds.has(subj.id) ||
+        (subj.code && assignedSubjIds.has(subj.code)) ||
+        (subj.name && assignedSubjIds.has(subj.name))
+      );
     });
   }, [subjects, selectedTeacher]);
 

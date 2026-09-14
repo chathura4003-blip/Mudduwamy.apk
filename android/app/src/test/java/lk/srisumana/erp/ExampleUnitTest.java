@@ -1,4 +1,4 @@
-package com.getcapacitor.myapp;
+package lk.srisumana.erp;
 
 import static org.junit.Assert.*;
 

@@ -69,51 +69,40 @@ export const TeachersTab: React.FC<TeachersTabProps> = ({
               ? tch.categoriesTaught
               : ['Mulika Pirivena', 'Pracheena'];
 
+          const teacherAssignments = Array.isArray(tch.teacherAssignments) ? tch.teacherAssignments : [];
+          const assignedClassIds = new Set(teacherAssignments.map((a: any) => a.classId).filter(Boolean));
+          const assignedSubjIds = new Set(teacherAssignments.map((a: any) => a.subjectId).filter(Boolean));
+
           const assignedClassesList = classes.filter(
             (c: any) =>
-              (tch.teacherAssignments &&
-                tch.teacherAssignments.some(
-                  (a: any) =>
-                    a.classId === c.id ||
-                    a.classId === c.code ||
-                    a.classId === c.name ||
-                    a.classId === c.className ||
-                    a.classId === c.classNameSinhala
-                )) ||
-              (tch.classesAssigned &&
-                (tch.classesAssigned.includes(c.id) ||
-                  tch.classesAssigned.includes(c.code) ||
-                  tch.classesAssigned.includes(c.name) ||
-                  tch.classesAssigned.includes(c.className) ||
-                  tch.classesAssigned.includes(c.classNameSinhala))) ||
+              assignedClassIds.has(c.id) ||
+              (c.code && assignedClassIds.has(c.code)) ||
+              (c.name && assignedClassIds.has(c.name)) ||
               c.teacherInChargeId === tch.id ||
-              c.teacherInChargeId === tch.customId ||
-              c.classTeacher === tch.name ||
-              (tch.monkName && c.classTeacher === tch.monkName)
+              c.teacherInChargeId === tch.customId
           );
 
-          const subjectsTaughtList =
-            tch.subjectsTaught && tch.subjectsTaught.length > 0
-              ? tch.subjectsTaught.map((sId) => {
-                  const found: any = subjects.find(
-                    (s: any) =>
-                      s.id === sId ||
-                      s.code === sId ||
-                      s.subjectCode === sId ||
-                      s.name === sId ||
-                      s.subjectName === sId ||
-                      s.nameSinhala === sId ||
-                      s.subjectNameSinhala === sId
-                  );
-                  return found
-                    ? found.subjectNameSinhala ||
-                        found.nameSinhala ||
-                        found.subjectName ||
-                        found.name ||
-                        sId
-                    : sId;
-                })
-              : [];
+          const subjectsTaughtList = Array.from(assignedSubjIds)
+            .map((sId) => {
+              const found: any = subjects.find(
+                (s: any) =>
+                  s.id === sId ||
+                  s.code === sId ||
+                  s.subjectCode === sId ||
+                  s.name === sId ||
+                  s.subjectName === sId ||
+                  s.nameSinhala === sId ||
+                  s.subjectNameSinhala === sId
+              );
+              return found
+                ? found.subjectNameSinhala ||
+                    found.nameSinhala ||
+                    found.subjectName ||
+                    found.name ||
+                    sId
+                : sId;
+            })
+            .filter(Boolean);
 
           return (
             <div

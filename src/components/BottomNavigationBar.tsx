@@ -134,21 +134,16 @@ export const BottomNavigationBar: React.FC = () => {
     };
   }, []);
 
-  if (!user || isKeyboardVisible || isModalOrChatActive) return null;
+  // Defensive check: BottomNavigationBar must NEVER render for admin or superadmin
+  if (!user || user.role === 'admin' || user.role === 'superadmin' || isKeyboardVisible || isModalOrChatActive) {
+    return null;
+  }
 
-  // 1. ADMIN BOTTOM NAVIGATION TABS (5 High-Value Core Tabs)
+  // Define role-specific navigation items (Teacher & Student only)
   let navItems: BottomNavTabItem[] = [];
 
-  if (user.role === 'admin' || user.role === 'superadmin') {
-    navItems = [
-      { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Overview', icon: Home },
-      { id: 'students', labelSi: 'ශිෂ්‍යයන්', labelEn: 'Students', icon: GraduationCap },
-      { id: 'teachers', labelSi: 'ගුරුවරුන්', labelEn: 'Teachers', icon: Users },
-      { id: 'classes', labelSi: 'පන්ති', labelEn: 'Classes', icon: School },
-      { id: 'settings', labelSi: 'සැකසුම්', labelEn: 'Settings', icon: Settings },
-    ];
-  } else if (user.role === 'teacher') {
-    // 2. TEACHER BOTTOM NAVIGATION TABS
+  if (user.role === 'teacher') {
+    // 1. TEACHER BOTTOM NAVIGATION TABS
     navItems = [
       { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Home', icon: Home },
       { id: 'roster', labelSi: 'පන්ති', labelEn: 'Classes', icon: School },
@@ -156,8 +151,8 @@ export const BottomNavigationBar: React.FC = () => {
       { id: 'materials', labelSi: 'පාඩම්', labelEn: 'Lessons', icon: BookOpen },
       { id: 'settings', labelSi: 'ගිණුම', labelEn: 'Profile', icon: User },
     ];
-  } else {
-    // 3. STUDENT BOTTOM NAVIGATION TABS
+  } else if (user.role === 'student') {
+    // 2. STUDENT BOTTOM NAVIGATION TABS
     navItems = [
       { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Home', icon: Home },
       { id: 'materials', labelSi: 'පාඩම්', labelEn: 'Lessons', icon: BookOpen },
@@ -165,6 +160,8 @@ export const BottomNavigationBar: React.FC = () => {
       { id: 'results', labelSi: 'ප්‍රතිඵල', labelEn: 'Results', icon: Award },
       { id: 'settings', labelSi: 'ගිණුම', labelEn: 'Profile', icon: User },
     ];
+  } else {
+    return null;
   }
 
   const handleNavClick = (tabId: string) => {

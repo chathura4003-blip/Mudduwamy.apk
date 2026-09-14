@@ -416,12 +416,11 @@ export const UploadMaterialModal: React.FC<UploadMaterialModalProps> = ({
               >
                 <option value="all">📚 සියලුම විෂයයන් (All Subjects)</option>
                 {(() => {
-                  const classSubjects = getAssignedSubjectsForClass
-                    ? getAssignedSubjectsForClass(matClassId)
-                    : assignedSubjects;
-                  const finalOptions =
-                    classSubjects.length > 0 ? classSubjects : assignedSubjects;
-                  return finalOptions.map((s, idx) => (
+                  const classSubjects =
+                    matClassId && matClassId !== 'all' && getAssignedSubjectsForClass
+                      ? getAssignedSubjectsForClass(matClassId)
+                      : assignedSubjects;
+                  return classSubjects.map((s, idx) => (
                     <option key={`up-mat-sbj-opt-${s.id || idx}`} value={s.id}>
                       📚 {s.name} ({s.code || s.id})
                     </option>
