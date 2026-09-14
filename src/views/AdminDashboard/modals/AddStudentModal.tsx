@@ -43,6 +43,7 @@ interface AddStudentModalProps {
   onGenerateRandomPassword?: (role: string) => void;
   onImageFileChange?: (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => void;
   onClassSelectForStudent?: (classId: string) => void;
+  onCategoryChangeForStudent?: (catKey: string) => void;
   onSaveStudent?: (e: React.FormEvent) => void;
   onSave?: (e: React.FormEvent) => void;
   toast?: any;

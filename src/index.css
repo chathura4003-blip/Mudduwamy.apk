@@ -367,7 +367,6 @@ html.text-scale-extra_large .truncate-safe {
 
   /* Ensure high-contrast crisp text for Sinhala typography */
   * {
-    color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -1168,7 +1167,6 @@ html[data-theme='dark'] .bg-rose-100:not([class*='dark:bg-']) {
   *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
   html,

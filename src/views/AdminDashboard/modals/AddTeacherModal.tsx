@@ -43,6 +43,7 @@ interface AddTeacherModalProps {
   copiedKey?: string | null;
   onCopy?: (text: string, key: string) => void;
   onGenerateRandomPassword?: (role: string) => void;
+  onImageFileChange?: (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => void;
   onSaveTeacher?: (e: React.FormEvent) => void;
   onSave?: (e: React.FormEvent) => void;
   toast?: any;
