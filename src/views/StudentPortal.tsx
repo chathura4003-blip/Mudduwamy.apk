@@ -7,6 +7,7 @@ import type { Exam, StudyMaterial, PirivenaClass, Subject, User, LibraryBook, Cl
 import { useStudentPortalData } from '../hooks/useStudentPortalData';
 import { OnlineExamView } from './OnlineExamView';
 import { PullToRefreshWrapper } from '../components/PullToRefreshWrapper';
+import { PageLoadingSpinner } from '../components/PageLoadingSpinner';
 import { openPdfInBlobTab, getPdfObjectUrl, openInAppFileViewer } from '../utils/pdfHelper';
 import { resolveSubjectSinhalaName } from '../utils/subjectHelper';
 import { useToast } from '../context/ToastContext';

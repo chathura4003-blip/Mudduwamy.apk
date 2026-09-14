@@ -358,7 +358,6 @@ async function executeRequest<T = any>(
       throw new ApiError(getStatusErrorMessage(response.status, errMessage), response.status, errorCode, errData);
     }
 
-    const reqMethod = (options.method || 'GET').toUpperCase();
     if (reqMethod !== 'GET') {
       notifyApiMutation(endpoint, reqMethod);
     }
