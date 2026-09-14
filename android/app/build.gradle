@@ -7,8 +7,21 @@ android {
         applicationId "lk.srisumana.erp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (project.findProperty("VERSION_CODE") ?: System.getenv("VERSION_CODE") ?: "100").toInteger()
-        versionName (project.findProperty("VERSION_NAME") ?: System.getenv("VERSION_NAME") ?: "1.0.0")
+        def vCode = 100
+        if (project.hasProperty("VERSION_CODE")) {
+            vCode = Integer.parseInt(project.property("VERSION_CODE").toString())
+        } else if (System.getenv("VERSION_CODE")) {
+            vCode = Integer.parseInt(System.getenv("VERSION_CODE"))
+        }
+        versionCode vCode
+
+        def vName = "1.0.0"
+        if (project.hasProperty("VERSION_NAME")) {
+            vName = project.property("VERSION_NAME").toString()
+        } else if (System.getenv("VERSION_NAME")) {
+            vName = System.getenv("VERSION_NAME")
+        }
+        versionName vName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
