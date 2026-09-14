@@ -838,7 +838,11 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     };
 
     checkLivePeriod();
-    const interval = setInterval(checkLivePeriod, 1000);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        checkLivePeriod();
+      }
+    }, 20000);
     return () => clearInterval(interval);
   }, []);
 

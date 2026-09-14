@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, startTransition, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type {
   User,
@@ -10,11 +10,9 @@ import type {
   ExamSubmission,
   OnlineAdmission,
 } from '../types';
-import { PublicSiteEditor } from '../components/PublicSiteEditor';
-import { AdminDonationsManager } from '../components/AdminDonationsManager';
-import { AdminWelcomeModal } from '../components/AdminWelcomeModal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { PullToRefreshWrapper } from '../components/PullToRefreshWrapper';
+import { PageLoadingSpinner } from '../components/PageLoadingSpinner';
 import { usePublicSite, triggerRealtimeSync } from '../context/PublicSiteContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -123,25 +121,25 @@ import {
   AdminSettingsFormState,
 } from './AdminDashboard/types';
 
-import {
-  OverviewTab,
-  StudentsTab,
-  TeachersTab,
-  ClassesTab,
-  AdmissionsTab,
-  AuditTab,
-  ExamReviewsTab,
-  SettingsTab,
-} from './AdminDashboard/tabs';
+import { OverviewTab } from './AdminDashboard/tabs/OverviewTab';
 
-import {
-  AddStudentModal,
-  AddTeacherModal,
-  ClassModal,
-  SubjectModal,
-  BroadcastNoticeModal,
-  BackupPreviewModal,
-} from './AdminDashboard/modals';
+// Dynamic loaders for heavy admin sub-tabs and modals (0ms initial Overview load)
+const StudentsTab = React.lazy(() => import('./AdminDashboard/tabs/StudentsTab').then((m) => ({ default: m.StudentsTab })));
+const ClassesTab = React.lazy(() => import('./AdminDashboard/tabs/ClassesTab').then((m) => ({ default: m.ClassesTab })));
+const AdmissionsTab = React.lazy(() => import('./AdminDashboard/tabs/AdmissionsTab').then((m) => ({ default: m.AdmissionsTab })));
+const AuditTab = React.lazy(() => import('./AdminDashboard/tabs/AuditTab').then((m) => ({ default: m.AuditTab })));
+const ExamReviewsTab = React.lazy(() => import('./AdminDashboard/tabs/ExamReviewsTab').then((m) => ({ default: m.ExamReviewsTab })));
+const SettingsTab = React.lazy(() => import('./AdminDashboard/tabs/SettingsTab').then((m) => ({ default: m.SettingsTab })));
+const PublicSiteEditor = React.lazy(() => import('../components/PublicSiteEditor').then((m) => ({ default: m.PublicSiteEditor })));
+const AdminDonationsManager = React.lazy(() => import('../components/AdminDonationsManager').then((m) => ({ default: m.AdminDonationsManager })));
+
+const AddStudentModal = React.lazy(() => import('./AdminDashboard/modals/AddStudentModal').then((m) => ({ default: m.AddStudentModal })));
+const AddTeacherModal = React.lazy(() => import('./AdminDashboard/modals/AddTeacherModal').then((m) => ({ default: m.AddTeacherModal })));
+const ClassModal = React.lazy(() => import('./AdminDashboard/modals/ClassModal').then((m) => ({ default: m.ClassModal })));
+const SubjectModal = React.lazy(() => import('./AdminDashboard/modals/SubjectModal').then((m) => ({ default: m.SubjectModal })));
+const BroadcastNoticeModal = React.lazy(() => import('./AdminDashboard/modals/BroadcastNoticeModal').then((m) => ({ default: m.BroadcastNoticeModal })));
+const BackupPreviewModal = React.lazy(() => import('./AdminDashboard/modals/BackupPreviewModal').then((m) => ({ default: m.BackupPreviewModal })));
+const AdminWelcomeModal = React.lazy(() => import('../components/AdminWelcomeModal').then((m) => ({ default: m.AdminWelcomeModal })));
 
 export { PIRIVENA_CATEGORIES, SUBJECT_CATEGORIES, generateClassDefaults };
 
@@ -2380,10 +2378,11 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       <div className="min-h-full w-full max-w-full overflow-x-clip bg-stone-50/50 dark:bg-stone-950 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-12">
         {/* Main Tab Content Container */}
         <div className="max-w-7xl mx-auto px-2 sm:px-8 pt-2 sm:pt-4">
-          <div
-            key={activeTab}
-            className="w-full space-y-4 sm:space-y-6 animate-fade-in-fast"
-          >
+          <Suspense fallback={<div className="p-8 flex items-center justify-center"><PageLoadingSpinner message="ටැබ් එක පූරණය වෙමින් පවතී..." /></div>}>
+            <div
+              key={activeTab}
+              className="w-full space-y-4 sm:space-y-6 animate-fade-in-fast"
+            >
             {activeTab === 'overview' && (
               <OverviewTab
                 students={students}
@@ -2585,129 +2584,132 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
               />
             )}
           </div>
-        </div>
+        </Suspense>
+      </div>
 
       {/* Modals - Conditionally rendered for maximum tab switching performance */}
-      {isWelcomeModalOpen && (
-        <AdminWelcomeModal
-          isOpen={isWelcomeModalOpen}
-          onClose={() => {
-            try {
-              sessionStorage.setItem('pirivena_admin_welcome_shown', 'true');
-              localStorage.setItem('pirivena_admin_welcome_shown', 'true');
-            } catch (e) {}
-            setIsWelcomeModalOpen(false);
-          }}
-          user={user}
-          totalStudents={students.length}
-          totalTeachers={teachers.length}
-          totalClasses={classes.length}
-          totalExams={exams.length}
-          totalSubjects={subjects.length}
-          totalNews={newsList.length}
-          pendingAdmissionsCount={admissions.filter((a) => a.status === 'pending').length}
-          pendingDonationsCount={donations.filter((d) => d.status === 'pending').length}
-          onGoToSiteEditor={() => switchSubTab('site_editor')}
-          onGoToAdmissions={() => switchSubTab('admissions')}
-          onGoToDonations={() => switchSubTab('donations_manager')}
-        />
-      )}
+      <Suspense fallback={null}>
+        {isWelcomeModalOpen && (
+          <AdminWelcomeModal
+            isOpen={isWelcomeModalOpen}
+            onClose={() => {
+              try {
+                sessionStorage.setItem('pirivena_admin_welcome_shown', 'true');
+                localStorage.setItem('pirivena_admin_welcome_shown', 'true');
+              } catch (e) {}
+              setIsWelcomeModalOpen(false);
+            }}
+            user={user}
+            totalStudents={students.length}
+            totalTeachers={teachers.length}
+            totalClasses={classes.length}
+            totalExams={exams.length}
+            totalSubjects={subjects.length}
+            totalNews={newsList.length}
+            pendingAdmissionsCount={admissions.filter((a) => a.status === 'pending').length}
+            pendingDonationsCount={donations.filter((d) => d.status === 'pending').length}
+            onGoToSiteEditor={() => switchSubTab('site_editor')}
+            onGoToAdmissions={() => switchSubTab('admissions')}
+            onGoToDonations={() => switchSubTab('donations_manager')}
+          />
+        )}
 
-      {confirmConfig.isOpen && (
-        <ConfirmModal
-          isOpen={confirmConfig.isOpen}
-          title={confirmConfig.title}
-          message={confirmConfig.message}
-          confirmText={confirmConfig.confirmText}
-          cancelText={confirmConfig.cancelText}
-          variant={confirmConfig.variant}
-          onConfirm={confirmConfig.onConfirm}
-          onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
-          isLoading={confirmConfig.isLoading}
-        />
-      )}
+        {confirmConfig.isOpen && (
+          <ConfirmModal
+            isOpen={confirmConfig.isOpen}
+            title={confirmConfig.title}
+            message={confirmConfig.message}
+            confirmText={confirmConfig.confirmText}
+            cancelText={confirmConfig.cancelText}
+            variant={confirmConfig.variant}
+            onConfirm={confirmConfig.onConfirm}
+            onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+            isLoading={confirmConfig.isLoading}
+          />
+        )}
 
-      {showStudentModal && (
-        <AddStudentModal
-          isOpen={showStudentModal}
-          onClose={() => setShowStudentModal(false)}
-          editingStudent={editingStudent}
-          studentForm={studentForm}
-          setStudentForm={setStudentForm}
-          classes={classes}
-          subjects={subjects}
-          teachers={teachers}
-          onSave={handleSaveStudent}
-          step={studentFormStep}
-          setStep={setStudentFormStep}
-          isSaving={isSavingStudent}
-        />
-      )}
+        {showStudentModal && (
+          <AddStudentModal
+            isOpen={showStudentModal}
+            onClose={() => setShowStudentModal(false)}
+            editingStudent={editingStudent}
+            studentForm={studentForm}
+            setStudentForm={setStudentForm}
+            classes={classes}
+            subjects={subjects}
+            teachers={teachers}
+            onSave={handleSaveStudent}
+            step={studentFormStep}
+            setStep={setStudentFormStep}
+            isSaving={isSavingStudent}
+          />
+        )}
 
-      {showTeacherModal && (
-        <AddTeacherModal
-          isOpen={showTeacherModal}
-          onClose={() => setShowTeacherModal(false)}
-          editingTeacher={editingTeacher}
-          teacherForm={teacherForm}
-          setTeacherForm={setTeacherForm}
-          classes={classes}
-          subjects={subjects}
-          onSave={handleSaveTeacher}
-          step={teacherFormStep}
-          setStep={setTeacherFormStep}
-          isSaving={isSavingTeacher}
-        />
-      )}
+        {showTeacherModal && (
+          <AddTeacherModal
+            isOpen={showTeacherModal}
+            onClose={() => setShowTeacherModal(false)}
+            editingTeacher={editingTeacher}
+            teacherForm={teacherForm}
+            setTeacherForm={setTeacherForm}
+            classes={classes}
+            subjects={subjects}
+            onSave={handleSaveTeacher}
+            step={teacherFormStep}
+            setStep={setTeacherFormStep}
+            isSaving={isSavingTeacher}
+          />
+        )}
 
-      {showClassModal && (
-        <ClassModal
-          isOpen={showClassModal}
-          onClose={() => setShowClassModal(false)}
-          editingClass={editingClass}
-          classForm={classForm}
-          setClassForm={setClassForm}
-          teachers={teachers}
-          subjects={subjects}
-          onSave={handleSaveClass}
-          isSaving={isSavingClass}
-        />
-      )}
+        {showClassModal && (
+          <ClassModal
+            isOpen={showClassModal}
+            onClose={() => setShowClassModal(false)}
+            editingClass={editingClass}
+            classForm={classForm}
+            setClassForm={setClassForm}
+            teachers={teachers}
+            subjects={subjects}
+            onSave={handleSaveClass}
+            isSaving={isSavingClass}
+          />
+        )}
 
-      {showSubjectModal && (
-        <SubjectModal
-          isOpen={showSubjectModal}
-          onClose={() => setShowSubjectModal(false)}
-          editingSubject={editingSubject}
-          subjectForm={subjectForm}
-          setSubjectForm={setSubjectForm}
-          teachers={teachers}
-          onSave={handleSaveSubject}
-          isSaving={isSavingSubject}
-        />
-      )}
+        {showSubjectModal && (
+          <SubjectModal
+            isOpen={showSubjectModal}
+            onClose={() => setShowSubjectModal(false)}
+            editingSubject={editingSubject}
+            subjectForm={subjectForm}
+            setSubjectForm={setSubjectForm}
+            teachers={teachers}
+            onSave={handleSaveSubject}
+            isSaving={isSavingSubject}
+          />
+        )}
 
-      {showNoticeModal && (
-        <BroadcastNoticeModal
-          isOpen={showNoticeModal}
-          onClose={() => setShowNoticeModal(false)}
-          editingNoticeId={editingNoticeId}
-          noticeForm={noticeForm}
-          setNoticeForm={setNoticeForm}
-          onSave={handleSaveNotice}
-          onApplyTemplate={handleApplyNoticeTemplate}
-          isSaving={isSavingNotice}
-        />
-      )}
+        {showNoticeModal && (
+          <BroadcastNoticeModal
+            isOpen={showNoticeModal}
+            onClose={() => setShowNoticeModal(false)}
+            editingNoticeId={editingNoticeId}
+            noticeForm={noticeForm}
+            setNoticeForm={setNoticeForm}
+            onSave={handleSaveNotice}
+            onApplyTemplate={handleApplyNoticeTemplate}
+            isSaving={isSavingNotice}
+          />
+        )}
 
-      {selectedBackupPreview && (
-        <BackupPreviewModal
-          selectedBackupPreview={selectedBackupPreview}
-          onClose={() => setSelectedBackupPreview(null)}
-          onConfirmRestore={handleConfirmExecuteRestore}
-          isRestoringBackup={isRestoringBackup}
-        />
-      )}
+        {selectedBackupPreview && (
+          <BackupPreviewModal
+            selectedBackupPreview={selectedBackupPreview}
+            onClose={() => setSelectedBackupPreview(null)}
+            onConfirmRestore={handleConfirmExecuteRestore}
+            isRestoringBackup={isRestoringBackup}
+          />
+        )}
+      </Suspense>
       </div>
     </PullToRefreshWrapper>
   );

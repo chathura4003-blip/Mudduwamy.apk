@@ -1,7 +1,8 @@
 /**
  * Centralized Application Lifecycle Manager
- * Handles FOREGROUND, BACKGROUND, INACTIVE, and RESUMED states
+ * Handles FOREGROUND, BACKGROUND, and INACTIVE states
  * across Capacitor Android native and Web browser environments.
+ * Normalized state machine to prevent overlapping event duplicates & resume storms.
  */
 
 import { App as CapacitorApp } from '@capacitor/app';
@@ -17,6 +18,7 @@ interface PollTask {
   timerId: number | null;
   isRunning: boolean;
   runImmediatelyOnResume: boolean;
+  lastRunTimestamp: number;
 }
 
 class AppLifecycleManager {
@@ -24,6 +26,7 @@ class AppLifecycleManager {
   private tasks: Map<string, PollTask> = new Map();
   private stateListeners: Set<(state: AppLifecycleState) => void> = new Set();
   private isInitialized = false;
+  private transitionDebounceTimer: any = null;
 
   constructor() {
     this.init();
@@ -37,9 +40,9 @@ class AppLifecycleManager {
     try {
       CapacitorApp.addListener('appStateChange', (state) => {
         if (state.isActive) {
-          this.transitionTo('RESUMED');
+          this.queueTransition('FOREGROUND');
         } else {
-          this.transitionTo('BACKGROUND');
+          this.queueTransition('BACKGROUND');
         }
       }).catch(() => {
         // Fallback for non-Capacitor web environments
@@ -51,25 +54,34 @@ class AppLifecycleManager {
     // 2. Listen to DOM visibility changes (for WebView / Browser compatibility)
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        this.transitionTo('BACKGROUND');
+        this.queueTransition('BACKGROUND');
       } else {
-        this.transitionTo('RESUMED');
+        this.queueTransition('FOREGROUND');
       }
     });
 
     // 3. Listen to Window focus/blur
     window.addEventListener('focus', () => {
-      if (this.currentState === 'BACKGROUND') {
-        this.transitionTo('RESUMED');
+      if (this.currentState === 'BACKGROUND' || this.currentState === 'INACTIVE') {
+        this.queueTransition('FOREGROUND');
       }
     });
 
     window.addEventListener('blur', () => {
-      // Only transition to INACTIVE if not already BACKGROUND
-      if (this.currentState !== 'BACKGROUND') {
-        this.transitionTo('INACTIVE');
+      if (this.currentState === 'FOREGROUND') {
+        this.queueTransition('INACTIVE');
       }
     });
+  }
+
+  private queueTransition(nextState: AppLifecycleState) {
+    if (this.transitionDebounceTimer) {
+      clearTimeout(this.transitionDebounceTimer);
+    }
+    // 50ms coalescing window to eliminate simultaneous overlapping triggers
+    this.transitionDebounceTimer = setTimeout(() => {
+      this.transitionTo(nextState);
+    }, 50);
   }
 
   private transitionTo(nextState: AppLifecycleState) {
@@ -80,13 +92,12 @@ class AppLifecycleManager {
 
     if (nextState === 'BACKGROUND' || nextState === 'INACTIVE') {
       this.handleEnterBackground();
-    } else if (nextState === 'RESUMED' || nextState === 'FOREGROUND') {
+    } else if (nextState === 'FOREGROUND' || nextState === 'RESUMED') {
       this.resumeAllTasks(prevState === 'BACKGROUND');
-      // Normalize state to FOREGROUND after resume
       this.currentState = 'FOREGROUND';
     }
 
-    // Notify listeners
+    // Notify listeners safely
     this.stateListeners.forEach((listener) => {
       try {
         listener(nextState);
@@ -111,7 +122,7 @@ class AppLifecycleManager {
 
   /**
    * Registers a recurring periodic task.
-   * Tasks with allowBackground: true continue to poll at backgroundIntervalMs when minimized.
+   * Non-essential tasks are paused when the app is in the background.
    */
   public registerPollTask(
     id: string,
@@ -143,6 +154,7 @@ class AppLifecycleManager {
       timerId: null,
       isRunning: false,
       runImmediatelyOnResume,
+      lastRunTimestamp: 0,
     };
 
     this.tasks.set(id, task);
@@ -176,6 +188,7 @@ class AppLifecycleManager {
 
       task.isRunning = true;
       try {
+        task.lastRunTimestamp = Date.now();
         await task.callback();
       } catch (err) {
         console.warn(`[Lifecycle] Task "${task.id}" execution error:`, err);
@@ -222,8 +235,11 @@ class AppLifecycleManager {
   }
 
   public resumeAllTasks(fromBackground = true) {
+    const now = Date.now();
     this.tasks.forEach((task) => {
-      const shouldRunImmediately = fromBackground && task.runImmediatelyOnResume;
+      // Only run immediately if the task has become stale according to its interval
+      const isStale = now - task.lastRunTimestamp >= task.intervalMs;
+      const shouldRunImmediately = fromBackground && task.runImmediatelyOnResume && isStale;
       this.startTask(task, shouldRunImmediately);
     });
   }

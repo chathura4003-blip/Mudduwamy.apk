@@ -39,6 +39,12 @@ export default defineConfig(({ mode }) => {
               if (id.includes('react/') || id.includes('react-dom/')) {
                 return 'vendor-react';
               }
+              if (id.includes('@capacitor') || id.includes('@capgo')) {
+                return 'vendor-capacitor';
+              }
+              if (id.includes('@google/genai')) {
+                return 'vendor-ai';
+              }
               if (id.includes('motion')) {
                 return 'vendor-motion';
               }

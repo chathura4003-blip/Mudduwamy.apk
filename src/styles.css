@@ -1,57 +1,5 @@
 /* Global print and custom styling overrides */
 
-/* Safe Area Inset Support */
-:root {
-  --safe-area-inset-top: env(safe-area-inset-top, 0px);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-inset-left: env(safe-area-inset-left, 0px);
-  --safe-area-inset-right: env(safe-area-inset-right, 0px);
-}
-
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px) !important;
-}
-
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-.pl-safe {
-  padding-left: env(safe-area-inset-left, 0px) !important;
-}
-
-.pr-safe {
-  padding-right: env(safe-area-inset-right, 0px) !important;
-}
-
-.px-safe {
-  padding-left: env(safe-area-inset-left, 0px) !important;
-  padding-right: env(safe-area-inset-right, 0px) !important;
-}
-
-.py-safe {
-  padding-top: env(safe-area-inset-top, 0px) !important;
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-.top-safe {
-  top: env(safe-area-inset-top, 0px) !important;
-}
-
-.bottom-safe {
-  bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-/* Ensure all full-screen modal backdrops automatically respect mobile camera notch and navigation bar */
-div[class*="fixed inset-0"][class*="z-[9999"]:not(.pointer-events-none):not(.no-safe-inset),
-div[class*="fixed inset-0"][class*="z-[10000"]:not(.pointer-events-none):not(.no-safe-inset),
-div[data-modal="true"] {
-  padding-top: max(0.625rem, env(safe-area-inset-top, 0px));
-  padding-bottom: max(0.625rem, env(safe-area-inset-bottom, 0px));
-  padding-left: max(0.625rem, env(safe-area-inset-left, 0px));
-  padding-right: max(0.625rem, env(safe-area-inset-right, 0px));
-}
-
 /* Smooth Theme Transitions */
 html {
   transition:

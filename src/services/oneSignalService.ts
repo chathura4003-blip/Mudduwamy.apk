@@ -33,8 +33,14 @@ class OneSignalService {
         return;
       }
 
-      // If document is not ready, wait for deviceready
-      if ((window as any).cordova || (window as any).Capacitor?.isNativePlatform?.()) {
+      // If native environment, wait for deviceready and never load web push SDK
+      const isNative =
+        (window as any).cordova ||
+        (window as any).Capacitor?.isNativePlatform?.() ||
+        window.location.protocol === 'capacitor:' ||
+        window.location.protocol === 'file:';
+
+      if (isNative) {
         document.addEventListener(
           'deviceready',
           () => {
@@ -52,7 +58,7 @@ class OneSignalService {
         return;
       }
 
-      // 2. Web Fallback (OneSignal Web SDK v16)
+      // 2. Web Fallback (OneSignal Web SDK v16) - for Web browsers only
       this.setupWebOneSignal();
       this.isInitialized = true;
     } catch (e) {

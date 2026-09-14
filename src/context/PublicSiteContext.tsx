@@ -364,7 +364,11 @@ export const PublicSiteProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     refreshAllData();
 
     // Auto-poll every 90 seconds when page is active
-    const interval = window.setInterval(refreshAllData, 90000);
+    const interval = window.setInterval(() => {
+      if (!document.hidden) {
+        refreshAllData();
+      }
+    }, 90000);
 
     // Instant sync when tab or mobile screen becomes active
     const handleVisibility = () => {

@@ -35,8 +35,6 @@ public class MainActivity extends BridgeActivity {
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
                 settings.setAllowFileAccess(true);
                 settings.setAllowContentAccess(true);
-                settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-                settings.setEnableSmoothTransition(true);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     settings.setOffscreenPreRaster(true);
                 }

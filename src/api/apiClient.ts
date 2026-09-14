@@ -344,8 +344,9 @@ async function executeRequest<T = any>(
         }
       } catch (e) {}
 
-      // Auto-retry server transient 502/503/504 errors on GET requests
-      if (retries > 0 && (response.status === 502 || response.status === 503 || response.status === 504)) {
+      // Auto-retry server transient 502/503/504 errors strictly on idempotent GET requests
+      const reqMethod = (options.method || 'GET').toUpperCase();
+      if (reqMethod === 'GET' && retries > 0 && (response.status === 502 || response.status === 503 || response.status === 504)) {
         await new Promise((r) => setTimeout(r, 600));
         return executeRequest<T>(endpoint, options, retries - 1);
       }

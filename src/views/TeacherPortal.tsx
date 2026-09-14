@@ -405,25 +405,27 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
 
   useEffect(() => {
     let intervalId: any;
-    if (activeTab === 'monitoring') {
-      if (teacherExams.length > 0) {
-        const validExam = teacherExams.find((e) => e.id === selectedExamId) || teacherExams[0];
-        if (selectedExamId !== validExam.id) {
-          setSelectedExamId(validExam.id);
+    if (activeTab === 'monitoring' && teacherExams.length > 0) {
+      const targetExamId = selectedExamId || teacherExams[0]?.id;
+      if (targetExamId) {
+        if (!selectedExamId) {
+          setSelectedExamId(targetExamId);
         }
-        fetchExamMonitoring(validExam.id);
+        fetchExamMonitoring(targetExamId);
 
         intervalId = window.setInterval(() => {
-          fetchExamMonitoring(validExam.id);
-        }, 5000);
-      } else {
-        setMonitoringData(null);
+          if (!document.hidden) {
+            fetchExamMonitoring(targetExamId);
+          }
+        }, 10000);
       }
+    } else if (activeTab === 'monitoring' && teacherExams.length === 0) {
+      setMonitoringData(null);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [selectedExamId, activeTab, teacherExams]);
+  }, [selectedExamId, activeTab, teacherExams.length]);
 
   const fetchExamMonitoring = async (examId: string) => {
     if (!examId) return;

@@ -296,28 +296,21 @@ export function useTeacherPortalData({
   useEffect(() => {
     fetchData();
 
-    // Auto-polling interval managed via AppLifecycleManager (auto-pauses on background)
+    // Auto-polling interval managed via AppLifecycleManager (strictly pauses on background)
     const cleanupPoll = appLifecycleManager.registerPollTask(
       'teacher_portal_data_poll',
       fetchData,
       autoRefreshIntervalMs,
-      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: true, backgroundIntervalMs: 30000 }
+      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
     );
 
     // Cross-tab broadcast sync
     let bc: BroadcastChannel | null = null;
     try {
-      bc = new BroadcastChannel('pirivena-admin-sync');
+      bc = new BroadcastChannel('pirivena_realtime_channel');
       bc.onmessage = (event) => {
-        if (
-          event.data?.type === 'users-updated' ||
-          event.data?.type === 'student-added' ||
-          event.data?.type === 'teacher-added' ||
-          event.data?.type === 'classes-updated' ||
-          event.data?.type === 'subjects-updated' ||
-          event.data?.type === 'data-updated'
-        ) {
-          fetchData();
+        if (event.data === 'refresh-portal-data') {
+          debouncedFetch();
         }
       };
     } catch (e) {}
@@ -330,40 +323,20 @@ export function useTeacherPortalData({
       }, 300);
     };
 
-    const handleStorageSync = (e: StorageEvent) => {
-      if (e.key === 'pirivena_admin_sync') {
-        debouncedFetch();
-      }
-    };
-    window.addEventListener('storage', handleStorageSync);
-
     const handleWindowSync = () => debouncedFetch();
     window.addEventListener('refresh-portal-data', handleWindowSync);
-    window.addEventListener('pirivena-users-updated', handleWindowSync);
     window.addEventListener('pirivena-classes-updated', handleWindowSync);
     window.addEventListener('pirivena-subjects-updated', handleWindowSync);
-    window.addEventListener('site-data-updated', handleWindowSync);
-    window.addEventListener('database-changed', handleWindowSync);
-    window.addEventListener('users-data-updated', handleWindowSync);
-    window.addEventListener('curriculum-updated', handleWindowSync);
-    window.addEventListener('exams-updated', handleWindowSync);
-    window.addEventListener('materials-updated', handleWindowSync);
+    window.addEventListener('pirivena-users-updated', handleWindowSync);
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       cleanupPoll();
       if (bc) bc.close();
-      window.removeEventListener('storage', handleStorageSync);
       window.removeEventListener('refresh-portal-data', handleWindowSync);
-      window.removeEventListener('pirivena-users-updated', handleWindowSync);
       window.removeEventListener('pirivena-classes-updated', handleWindowSync);
       window.removeEventListener('pirivena-subjects-updated', handleWindowSync);
-      window.removeEventListener('site-data-updated', handleWindowSync);
-      window.removeEventListener('database-changed', handleWindowSync);
-      window.removeEventListener('users-data-updated', handleWindowSync);
-      window.removeEventListener('curriculum-updated', handleWindowSync);
-      window.removeEventListener('exams-updated', handleWindowSync);
-      window.removeEventListener('materials-updated', handleWindowSync);
+      window.removeEventListener('pirivena-users-updated', handleWindowSync);
     };
   }, [fetchData, autoRefreshIntervalMs]);
 

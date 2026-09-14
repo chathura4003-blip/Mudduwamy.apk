@@ -526,12 +526,12 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
     if (!user) return;
     loadMessages(false);
 
-    const pollRate = isOpen ? 4000 : 30000;
+    const pollRate = isOpen ? 4000 : 45000;
     const cleanupPoll = appLifecycleManager.registerPollTask(
       'pirivena_chat_poll',
       () => loadMessages(true),
       pollRate,
-      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: true, backgroundIntervalMs: 15000 }
+      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
     );
 
     return () => {

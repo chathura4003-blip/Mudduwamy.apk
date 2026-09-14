@@ -160,54 +160,23 @@ export function getCachedData<T = any>(url: string): T | null {
   return entry ? (entry.data as T) : null;
 }
 
-let fullRefreshTimer: any = null;
-
 /**
  * Trigger complete system-wide UI refresh and instant data re-fetch across all portals & open tabs.
- * Dispatches the primary 'refresh-portal-data' event immediately and coalesces secondary legacy events
- * to eliminate duplicate event storms and cascading multi-fetch render loops.
+ * Dispatches the single authoritative 'refresh-portal-data' event to eliminate duplicate event storms.
  */
 export function triggerFullAppRefresh(): void {
   invalidateCache();
 
   if (typeof window !== 'undefined') {
-    // 1. Primary authoritative refresh signal
+    // 1. Authoritative refresh signal across active tab
     window.dispatchEvent(new CustomEvent('refresh-portal-data'));
 
-    // 2. Coalesced legacy broadcast for any sub-components listening to specific events
-    if (fullRefreshTimer) clearTimeout(fullRefreshTimer);
-    fullRefreshTimer = setTimeout(() => {
-      const legacyEvents = [
-        'site-data-updated',
-        'users-data-updated',
-        'database-changed',
-        'classes-updated',
-        'subjects-updated',
-        'curriculum-updated',
-        'exams-updated',
-        'materials-updated',
-        'notices-updated',
-        'admissions-updated',
-        'donations-updated',
-      ];
-      legacyEvents.forEach((evtName) => {
-        try {
-          window.dispatchEvent(new CustomEvent(evtName));
-        } catch (_) {}
-      });
-    }, 50);
-
-    // 3. Cross-tab real-time synchronization
+    // 2. Cross-tab real-time synchronization (single clean broadcast)
     if (typeof BroadcastChannel !== 'undefined') {
       try {
         const bc = new BroadcastChannel('pirivena_realtime_channel');
         bc.postMessage('refresh-portal-data');
         bc.close();
-      } catch (_) {}
-      try {
-        const bc2 = new BroadcastChannel('pirivena-admin-sync');
-        bc2.postMessage({ type: 'data-updated' });
-        bc2.close();
       } catch (_) {}
     }
   }
