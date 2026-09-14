@@ -378,27 +378,27 @@ export const ClassesTab: React.FC<ClassesTabProps> = React.memo(({
                     <button
                       type="button"
                       onClick={() => setTimetableClass(cls)}
-                      className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 transition cursor-pointer active:scale-95 border border-blue-200/80 dark:border-blue-800/80 shadow-2xs group"
+                      className="py-2 px-3 min-h-[38px] bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold text-[10.5px] rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 border border-blue-200/80 dark:border-blue-800/80 shadow-2xs touch-manipulation group"
                       title="පන්ති කාලසටහන (Timetable)"
                     >
-                      <Calendar className="w-3 h-3 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                      <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
                       <span>කාලසටහන</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onOpenEditClass(cls)}
-                      className="flex-1 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 transition cursor-pointer active:scale-95 border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs group"
+                      className="flex-1 py-2 min-h-[38px] bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-[10.5px] rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 border border-indigo-200/80 dark:border-indigo-800/80 shadow-2xs touch-manipulation group"
                     >
-                      <Edit className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                      <Edit className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                       <span>{language === 'si' ? 'සංස්කරණය' : 'Edit'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteClass(cls.id)}
-                      className="p-1.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-200 dark:border-rose-800 transition cursor-pointer active:scale-95 shadow-2xs group"
+                      className="p-2 min-h-[38px] min-w-[38px] bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-200 dark:border-rose-800 transition cursor-pointer active:scale-95 shadow-2xs touch-manipulation flex items-center justify-center group"
                       title="මකන්න"
                     >
-                      <Trash2 className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                      <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                     </button>
                   </div>
                 </div>
@@ -488,18 +488,18 @@ export const ClassesTab: React.FC<ClassesTabProps> = React.memo(({
                     <button
                       type="button"
                       onClick={() => onOpenEditSubject(subj)}
-                      className="flex-1 py-1.5 bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/60 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 font-bold text-[10px] rounded-lg flex items-center justify-center gap-1 transition cursor-pointer active:scale-95 border border-cyan-200/80 dark:border-cyan-800/80 shadow-2xs group"
+                      className="flex-1 py-2 min-h-[38px] bg-cyan-50 hover:bg-cyan-100 dark:bg-cyan-950/60 dark:hover:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 font-bold text-[10.5px] rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 border border-cyan-200/80 dark:border-cyan-800/80 shadow-2xs touch-manipulation group"
                     >
-                      <Edit className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                      <Edit className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                       <span>{language === 'si' ? 'සංස්කරණය' : 'Edit'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteSubject(subj.id)}
-                      className="p-1.5 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-200 dark:border-rose-800 transition cursor-pointer active:scale-95 shadow-2xs group"
+                      className="p-2 min-h-[38px] min-w-[38px] bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 rounded-xl border border-rose-200 dark:border-rose-800 transition cursor-pointer active:scale-95 shadow-2xs touch-manipulation flex items-center justify-center group"
                       title="මකන්න"
                     >
-                      <Trash2 className="w-3 h-3 group-hover:scale-110 transition-transform" />
+                      <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
                     </button>
                   </div>
                 </div>

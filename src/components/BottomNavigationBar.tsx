@@ -263,7 +263,7 @@ export const BottomNavigationBar: React.FC = () => {
                 )}
               </div>
 
-              <span className="text-[10.5px] sm:text-[11px] tracking-tight truncate max-w-[68px] leading-tight font-serif font-bold pt-0.5">
+              <span className="text-[10px] xs:text-[10.5px] sm:text-[11px] tracking-tight w-full text-center px-0.5 truncate leading-tight font-sans font-bold pt-0.5">
                 {label}
               </span>
             </button>

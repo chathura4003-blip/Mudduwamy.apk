@@ -58,6 +58,7 @@ import { useToast } from '../../../context/ToastContext';
 import { notificationService } from '../../../services/notificationService';
 import { triggerHaptic } from '../../../utils/haptics';
 import { NotificationSettingsControl } from '../../../components/NotificationSettingsControl';
+import { ConfirmModal } from '../../../components/ConfirmModal';
 import { settingsApi } from '../../../api';
 import {
   CURRENT_APP_VERSION,
@@ -237,23 +238,45 @@ export const SettingsTab: React.FC<SettingsTabProps> = React.memo(({
   const [sessionSearchQuery, setSessionSearchQuery] = useState('');
   const [sessionRoleFilter, setSessionRoleFilter] = useState<'all' | 'students' | 'teachers' | 'admins'>('all');
   const [isBulkLoggingOut, setIsBulkLoggingOut] = useState<string | null>(null);
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
 
-  const handleBulkLogoutRole = async (role: 'students' | 'teachers') => {
+  const handleBulkLogoutRole = (role: 'students' | 'teachers') => {
     const roleName = role === 'students' ? 'සියලුම සිසුන් (All Students)' : 'සියලුම ගුරුවරුන් (All Teachers)';
-    if (!window.confirm(`ඔබට ${roleName} පද්ධතියෙන් එකවර Log Out කර දැමීමට අවශ්‍ය බව සහතිකද?`)) {
-      return;
-    }
-    try {
-      setIsBulkLoggingOut(role);
-      triggerHaptic('heavy');
-      await settingsApi.forceLogoutRole(role);
-      handleRefreshSessions();
-      toast.success(`${roleName} සාර්ථකව Log Out කරන ලදී!`);
-    } catch (e) {
-      toast.error('සමූහ Logout කිරීම අසාර්ථක විය.');
-    } finally {
-      setIsBulkLoggingOut(null);
-    }
+    setConfirmModalConfig({
+      isOpen: true,
+      title: `${roleName} Logout කිරීම`,
+      message: `ඔබට ${roleName} පද්ධතියෙන් එකවර Log Out කර දැමීමට අවශ්‍ය බව සහතිකද?`,
+      confirmText: 'ඔව්, Log Out කරන්න',
+      cancelText: 'අවලංගු කරන්න',
+      variant: 'danger',
+      onConfirm: async () => {
+        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+        try {
+          setIsBulkLoggingOut(role);
+          triggerHaptic('heavy');
+          await settingsApi.forceLogoutRole(role);
+          handleRefreshSessions();
+          toast.success(`${roleName} සාර්ථකව Log Out කරන ලදී!`);
+        } catch (e) {
+          toast.error('සමූහ Logout කිරීම අසාර්ථක විය.');
+        } finally {
+          setIsBulkLoggingOut(null);
+        }
+      },
+    });
   };
 
   const filteredActiveSessions = React.useMemo(() => {
@@ -794,9 +817,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = React.memo(({
                   type="button"
                   onClick={() => {
                     triggerHaptic('heavy');
-                    if (window.confirm('ඔබ හැර අනෙකුත් සියලුම පරිශීලකයින් එකවර පද්ධතියෙන් Logout කර දැමීමට අවශ්‍ය බව සහතිකද?')) {
-                      handleRevokeOtherSessions();
-                    }
+                    setConfirmModalConfig({
+                      isOpen: true,
+                      title: 'අනෙකුත් සියලු සැසි Logout කිරීම',
+                      message: 'ඔබ හැර අනෙකුත් සියලුම පරිශීලකයින් එකවර පද්ධතියෙන් Logout කර දැමීමට අවශ්‍ය බව සහතිකද?',
+                      confirmText: 'ඔව්, සියලු සැසි අවසන් කරන්න',
+                      cancelText: 'අවලංගු කරන්න',
+                      variant: 'danger',
+                      onConfirm: () => {
+                        setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+                        handleRevokeOtherSessions();
+                      },
+                    });
                   }}
                   className="px-4 py-2 bg-gradient-to-r from-rose-500 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-black text-xs rounded-xl flex items-center gap-2 transition cursor-pointer active:scale-95 shadow-md shadow-rose-500/20"
                 >
@@ -1158,9 +1190,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = React.memo(({
                               onClick={() => {
                                 triggerHaptic('heavy');
                                 const targetName = sess.name || sess.userId || 'User';
-                                if (window.confirm(`ඔබට '${targetName}' පරිශීලකයාගේ APK / Web සැසිය වහාම Logout කර දැමීමට අවශ්‍යද?`)) {
-                                  handleRevokeSingleSession(sess.id, targetName);
-                                }
+                                setConfirmModalConfig({
+                                  isOpen: true,
+                                  title: 'සැසිය Logout කිරීම',
+                                  message: `ඔබට '${targetName}' පරිශීලකයාගේ APK / Web සැසිය වහාම Logout කර දැමීමට අවශ්‍යද?`,
+                                  confirmText: 'ඔව්, Force Logout කරන්න',
+                                  cancelText: 'අවලංගු කරන්න',
+                                  variant: 'danger',
+                                  onConfirm: () => {
+                                    setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+                                    handleRevokeSingleSession(sess.id, targetName);
+                                  },
+                                });
                               }}
                               className="w-full md:w-auto px-4 py-2.5 bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white rounded-xl text-xs font-black transition cursor-pointer active:scale-95 shadow-sm shadow-rose-500/25 flex items-center justify-center gap-2"
                             >
@@ -2301,6 +2342,18 @@ export const SettingsTab: React.FC<SettingsTabProps> = React.memo(({
           </div>
         </div>
       )}
+
+      {/* Global Native Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModalConfig.isOpen}
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={confirmModalConfig.message}
+        confirmText={confirmModalConfig.confirmText}
+        cancelText={confirmModalConfig.cancelText}
+        variant={confirmModalConfig.variant || 'danger'}
+      />
     </div>
   );
 });

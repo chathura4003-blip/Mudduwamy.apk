@@ -274,7 +274,7 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
     });
 
   return (
-    <div className="min-h-screen bg-stone-100 dark:bg-stone-950 p-3 sm:p-6 flex flex-col justify-between space-y-6 text-stone-900 dark:text-stone-100">
+    <div className="min-h-screen min-h-screen-dvh bg-stone-100 dark:bg-stone-950 p-3 sm:p-6 pt-safe pb-safe flex flex-col justify-between space-y-6 text-stone-900 dark:text-stone-100">
       {/* Top Header Bar */}
       <div className="bg-amber-950 dark:bg-stone-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg border-b-4 border-amber-500 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -516,21 +516,21 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
           )}
 
           {/* Question Navigation Controls */}
-          <div className="pt-6 border-t border-amber-100 dark:border-stone-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-6 border-t border-amber-100 dark:border-stone-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <button
               disabled={currentQIndex === 0}
               onClick={() => setCurrentQIndex((prev) => prev - 1)}
-              className="px-4 py-2.5 bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 text-stone-800 dark:text-stone-200 rounded-xl font-bold text-xs disabled:opacity-40 flex items-center gap-1.5 transition"
+              className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 text-stone-800 dark:text-stone-200 rounded-xl font-bold text-xs disabled:opacity-40 flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95 touch-manipulation"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>පෙර ප්‍රශ්නය (Previous)</span>
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {currentQIndex < totalQuestions - 1 ? (
                 <button
                   onClick={() => setCurrentQIndex((prev) => prev + 1)}
-                  className="px-5 py-2.5 bg-amber-800 hover:bg-amber-900 dark:bg-amber-700 dark:hover:bg-amber-600 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow transition"
+                  className="w-full sm:w-auto flex-1 sm:flex-none px-5 py-2.5 min-h-[44px] bg-amber-800 hover:bg-amber-900 dark:bg-amber-700 dark:hover:bg-amber-600 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow transition cursor-pointer active:scale-95 touch-manipulation"
                 >
                   <span>ඊළඟ ප්‍රශ්නය (Next)</span>
                   <ArrowRight className="w-4 h-4" />
@@ -538,7 +538,7 @@ export const OnlineExamView: React.FC<OnlineExamViewProps> = ({
               ) : (
                 <button
                   onClick={() => setShowSubmitConfirmModal(true)}
-                  className="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md transition"
+                  className="w-full sm:w-auto flex-1 sm:flex-none px-6 py-2.5 min-h-[44px] bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition cursor-pointer active:scale-95 touch-manipulation"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>විභාගය අවසන් කර භාරදෙන්න (Submit)</span>

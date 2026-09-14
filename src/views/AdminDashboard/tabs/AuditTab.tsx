@@ -15,6 +15,7 @@ import {
 import { SystemAuditLog as AuditLog } from '../../../types';
 import { auditApi } from '../../../api';
 import { useToast } from '../../../context/ToastContext';
+import { ConfirmModal } from '../../../components/ConfirmModal';
 
 interface AuditTabProps {
   auditLogs: AuditLog[];
@@ -34,6 +35,8 @@ export const AuditTab: React.FC<AuditTabProps> = React.memo(({ auditLogs: initia
     }
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   React.useEffect(() => {
     try {
@@ -64,17 +67,18 @@ export const AuditTab: React.FC<AuditTabProps> = React.memo(({ auditLogs: initia
     }
   };
 
-  const handleClear = async () => {
-    if (!window.confirm('ඔබට සියලුම පද්ධති ආරක්ෂක සටහන් (Audit Logs) පිරිසිදු කිරීමට අවශ්‍යද?')) {
-      return;
-    }
+  const handleExecuteClear = async () => {
     try {
+      setIsClearing(true);
       await auditApi.clearLogs();
       setLogs([]);
       if (onClearLogs) onClearLogs();
       toast.success('ආරක්ෂක සටහන් (Audit Logs) සාර්ථකව පිරිසිදු කරන ලදී!');
+      setShowClearConfirm(false);
     } catch (e) {
       toast.error('පිරිසිදු කිරීම අසාර්ථක විය.');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -185,7 +189,7 @@ export const AuditTab: React.FC<AuditTabProps> = React.memo(({ auditLogs: initia
           </button>
 
           <button
-            onClick={handleClear}
+            onClick={() => setShowClearConfirm(true)}
             className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-600 dark:text-rose-400 font-bold text-[10.5px] rounded-lg border border-rose-200 dark:border-rose-800 transition flex items-center gap-1 cursor-pointer active:scale-95 group"
             title="Clear All Logs"
           >
@@ -271,6 +275,18 @@ export const AuditTab: React.FC<AuditTabProps> = React.memo(({ auditLogs: initia
           })
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={handleExecuteClear}
+        title="ආරක්ෂක සටහන් ඉවත් කිරීම (Clear Audit Logs)"
+        message="ඔබට සියලුම පද්ධති ආරක්ෂක සටහන් (Audit Logs) ස්ථිරවම පිරිසිදු කිරීමට අවශ්‍ය බව තහවුරු කරන්නද? මෙම ක්‍රියාව ආපසු හැරවිය නොහැක."
+        confirmText="ඔව්, සටහන් පිරිසිදු කරන්න"
+        cancelText="අවලංගු කරන්න"
+        variant="danger"
+        isLoading={isClearing}
+      />
     </div>
   );
 });
