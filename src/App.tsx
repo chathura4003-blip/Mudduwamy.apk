@@ -56,6 +56,7 @@ if (typeof window !== 'undefined') {
 import { FloatingPirivenaChat } from './components/FloatingPirivenaChat';
 import { useMobileNativeEnhancements } from './hooks/useMobileNativeEnhancements';
 import { useAndroidBackButton } from './hooks/useAndroidBackButton';
+import { navigationHistoryManager } from './services/navigationHistoryManager';
 import { notificationService } from './services/notificationService';
 import { oneSignalService } from './services/oneSignalService';
 import { liveUpdateService, isAutoLiveUpdateEnabled } from './services/liveUpdateService';
@@ -272,6 +273,15 @@ const MainAppContent: React.FC = () => {
     closeExitModal: () => setIsExitModalOpen(false),
     openExitConfirm: () => setIsExitModalOpen(true),
   });
+
+  useEffect(() => {
+    if (isOnboardingOpen) {
+      navigationHistoryManager.pushModal('onboarding_modal', () => setIsOnboardingOpen(false), 20);
+    } else {
+      navigationHistoryManager.removeModal('onboarding_modal');
+    }
+    return () => navigationHistoryManager.removeModal('onboarding_modal');
+  }, [isOnboardingOpen]);
 
   // Mobile Native Enhancements
   const { isOnline, showOfflineToast } =
