@@ -1,13 +1,25 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { PirivenaClass, Subject, User, Exam, StudyMaterial, ExamSubmission } from '../types';
-import { classesApi, subjectsApi, examsApi, materialsApi, teachersApi, studentsApi } from '../api';
+import { classesApi, subjectsApi, examsApi, materialsApi, teachersApi } from '../api';
 import { appLifecycleManager } from '../services/appLifecycleManager';
 
 export interface UseStudentPortalDataParams {
   classId?: string;
   subjectId?: string;
   autoRefreshIntervalMs?: number;
+}
+
+export interface StudentPortalDataState {
+  exams: Exam[];
+  materials: StudyMaterial[];
+  classes: PirivenaClass[];
+  subjects: Subject[];
+  teachers: User[];
+  completedSubmissions: ExamSubmission[];
+  completedExamIds: string[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface UseStudentPortalDataReturn {
@@ -30,6 +42,94 @@ export interface UseStudentPortalDataReturn {
   setCompletedSubmissions: React.Dispatch<React.SetStateAction<ExamSubmission[]>>;
   setExams: React.Dispatch<React.SetStateAction<Exam[]>>;
   setMaterials: React.Dispatch<React.SetStateAction<StudyMaterial[]>>;
+  setClasses?: React.Dispatch<React.SetStateAction<PirivenaClass[]>>;
+  setSubjects?: React.Dispatch<React.SetStateAction<Subject[]>>;
+  setTeachers?: React.Dispatch<React.SetStateAction<User[]>>;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// In-Memory Shared Metadata Cache for Static Pirivena ERP Data (Classes, Subjects, Teachers)
+// Avoids redownloading static datasets on every student refresh.
+// ─────────────────────────────────────────────────────────────────────────────
+interface MetadataCacheItem<T> {
+  data: T;
+  timestamp: number;
+}
+
+const METADATA_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
+
+let classesCache: MetadataCacheItem<PirivenaClass[]> | null = null;
+let subjectsCache: MetadataCacheItem<Subject[]> | null = null;
+let teachersCache: MetadataCacheItem<User[]> | null = null;
+
+export function invalidateMetadataCache(key?: 'classes' | 'subjects' | 'teachers' | 'all') {
+  if (!key || key === 'all') {
+    classesCache = null;
+    subjectsCache = null;
+    teachersCache = null;
+  } else if (key === 'classes') {
+    classesCache = null;
+  } else if (key === 'subjects') {
+    subjectsCache = null;
+  } else if (key === 'teachers') {
+    teachersCache = null;
+  }
+}
+
+export async function getCachedOrFetchClasses(): Promise<PirivenaClass[]> {
+  const now = Date.now();
+  if (classesCache && now - classesCache.timestamp < METADATA_CACHE_TTL_MS) {
+    return classesCache.data;
+  }
+  const data = await classesApi.getClasses().catch(() => []);
+  const safeData = Array.isArray(data) ? data : [];
+  if (safeData.length > 0) {
+    classesCache = { data: safeData, timestamp: now };
+  }
+  return safeData;
+}
+
+export async function getCachedOrFetchSubjects(): Promise<Subject[]> {
+  const now = Date.now();
+  if (subjectsCache && now - subjectsCache.timestamp < METADATA_CACHE_TTL_MS) {
+    return subjectsCache.data;
+  }
+  const data = await subjectsApi.getSubjects().catch(() => []);
+  const safeData = Array.isArray(data) ? data : [];
+  if (safeData.length > 0) {
+    subjectsCache = { data: safeData, timestamp: now };
+  }
+  return safeData;
+}
+
+export async function getCachedOrFetchTeachers(): Promise<User[]> {
+  const now = Date.now();
+  if (teachersCache && now - teachersCache.timestamp < METADATA_CACHE_TTL_MS) {
+    return teachersCache.data;
+  }
+  const data = await teachersApi.getTeachers().catch(() => []);
+  const safeData = Array.isArray(data) ? data : [];
+  if (safeData.length > 0) {
+    teachersCache = { data: safeData, timestamp: now };
+  }
+  return safeData;
+}
+
+function parseArrayField(val: any): string[] {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.map((x) => String(x).trim()).filter(Boolean);
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map((x) => String(x).trim()).filter(Boolean);
+      } catch {}
+    }
+    return trimmed.split(',').map((x) => x.trim()).filter(Boolean);
+  }
+  return [];
 }
 
 export function useStudentPortalData({
@@ -39,15 +139,30 @@ export function useStudentPortalData({
 }: UseStudentPortalDataParams = {}): UseStudentPortalDataReturn {
   const { user } = useAuth();
 
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [materials, setMaterials] = useState<StudyMaterial[]>([]);
-  const [classes, setClasses] = useState<PirivenaClass[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [teachers, setTeachers] = useState<User[]>([]);
-  const [completedSubmissions, setCompletedSubmissions] = useState<ExamSubmission[]>([]);
-  const [completedExamIds, setCompletedExamIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Consolidated single atomic state holding all student portal data
+  const [portalState, setPortalState] = useState<StudentPortalDataState>(() => ({
+    exams: [],
+    materials: [],
+    classes: classesCache?.data || [],
+    subjects: subjectsCache?.data || [],
+    teachers: teachersCache?.data || [],
+    completedSubmissions: [],
+    completedExamIds: [],
+    isLoading: true,
+    error: null,
+  }));
+
+  const {
+    exams,
+    materials,
+    classes,
+    subjects,
+    teachers,
+    completedSubmissions,
+    completedExamIds,
+    isLoading,
+    error,
+  } = portalState;
 
   // Determine student's enrolled class object
   const studentClass = useMemo(() => {
@@ -70,23 +185,6 @@ export function useStudentPortalData({
       }) || null
     );
   }, [classes, user]);
-
-function parseArrayField(val: any): string[] {
-  if (!val) return [];
-  if (Array.isArray(val)) return val.map((x) => String(x).trim()).filter(Boolean);
-  if (typeof val === 'string') {
-    const trimmed = val.trim();
-    if (!trimmed) return [];
-    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) return parsed.map((x) => String(x).trim()).filter(Boolean);
-      } catch {}
-    }
-    return trimmed.split(',').map((x) => x.trim()).filter(Boolean);
-  }
-  return [];
-}
 
   // Compute student's authorized enrolled subjects (Dynamic Live Class Subjects + Electives)
   const availableSubjects = useMemo(() => {
@@ -176,11 +274,10 @@ function parseArrayField(val: any): string[] {
     return true;
   }, [user, classId, subjectId, studentClass, availableSubjects]);
 
-  // Main data fetching routine with mandatory parameters
+  // Main data fetching routine: utilizes cached static metadata and fetches dynamic student data in parallel
   const fetchData = useCallback(async () => {
     if (!user) return;
-    setIsLoading(true);
-    setError(null);
+    setPortalState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const studentId = user.id || user.customId || 'user-student-01';
@@ -191,28 +288,34 @@ function parseArrayField(val: any): string[] {
         await Promise.all([
           examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []),
           materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []),
-          classesApi.getClasses().catch(() => []),
-          subjectsApi.getSubjects().catch(() => []),
+          getCachedOrFetchClasses(),
+          getCachedOrFetchSubjects(),
           examsApi.getSubmissions(undefined, studentId, effectiveClassId, effectiveSubjectId).catch(() => []),
-          teachersApi.getTeachers().catch(() => []),
+          getCachedOrFetchTeachers(),
         ]);
 
-      if (Array.isArray(examsData)) setExams(examsData);
-      if (Array.isArray(matsData)) setMaterials(matsData);
-      if (Array.isArray(classesData)) setClasses(classesData);
-      if (Array.isArray(subjsData)) setSubjects(subjsData);
-      if (Array.isArray(teachersData)) setTeachers(teachersData);
+      const resolvedSubmissions = Array.isArray(serverSubs) ? serverSubs : [];
+      const serverExamIds = resolvedSubmissions.map((s: any) => s.examId).filter(Boolean);
 
-      if (Array.isArray(serverSubs)) {
-        setCompletedSubmissions(serverSubs);
-        const serverExamIds = serverSubs.map((s: any) => s.examId);
-        setCompletedExamIds(serverExamIds);
-      }
+      setPortalState((prev) => ({
+        ...prev,
+        exams: Array.isArray(examsData) ? examsData : prev.exams,
+        materials: Array.isArray(matsData) ? matsData : prev.materials,
+        classes: Array.isArray(classesData) ? classesData : prev.classes,
+        subjects: Array.isArray(subjsData) ? subjsData : prev.subjects,
+        teachers: Array.isArray(teachersData) ? teachersData : prev.teachers,
+        completedSubmissions: resolvedSubmissions,
+        completedExamIds: serverExamIds,
+        isLoading: false,
+        error: null,
+      }));
     } catch (err: any) {
       console.error('Error fetching student portal data:', err);
-      setError(err?.message || 'Failed to fetch student portal data');
-    } finally {
-      setIsLoading(false);
+      setPortalState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: err?.message || 'Failed to fetch student portal data',
+      }));
     }
   }, [user?.id, user?.customId, user?.classId, user?.pirivenaClass, classId, subjectId]);
 
@@ -230,6 +333,14 @@ function parseArrayField(val: any): string[] {
       );
     }
 
+    let debounceTimer: any = null;
+    const debouncedFetch = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchData();
+      }, 300);
+    };
+
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel('pirivena_realtime_channel');
@@ -240,28 +351,36 @@ function parseArrayField(val: any): string[] {
       };
     } catch (e) {}
 
-    let debounceTimer: any = null;
-    const debouncedFetch = () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        fetchData();
-      }, 300);
+    const handleWindowSync = () => debouncedFetch();
+
+    const handleClassesUpdated = () => {
+      invalidateMetadataCache('classes');
+      debouncedFetch();
     };
 
-    const handleWindowSync = () => debouncedFetch();
+    const handleSubjectsUpdated = () => {
+      invalidateMetadataCache('subjects');
+      debouncedFetch();
+    };
+
+    const handleUsersUpdated = () => {
+      invalidateMetadataCache('teachers');
+      debouncedFetch();
+    };
+
     window.addEventListener('refresh-portal-data', handleWindowSync);
-    window.addEventListener('pirivena-classes-updated', handleWindowSync);
-    window.addEventListener('pirivena-subjects-updated', handleWindowSync);
-    window.addEventListener('pirivena-users-updated', handleWindowSync);
+    window.addEventListener('pirivena-classes-updated', handleClassesUpdated);
+    window.addEventListener('pirivena-subjects-updated', handleSubjectsUpdated);
+    window.addEventListener('pirivena-users-updated', handleUsersUpdated);
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupPoll) cleanupPoll();
       if (bc) bc.close();
       window.removeEventListener('refresh-portal-data', handleWindowSync);
-      window.removeEventListener('pirivena-classes-updated', handleWindowSync);
-      window.removeEventListener('pirivena-subjects-updated', handleWindowSync);
-      window.removeEventListener('pirivena-users-updated', handleWindowSync);
+      window.removeEventListener('pirivena-classes-updated', handleClassesUpdated);
+      window.removeEventListener('pirivena-subjects-updated', handleSubjectsUpdated);
+      window.removeEventListener('pirivena-users-updated', handleUsersUpdated);
     };
   }, [fetchData, autoRefreshIntervalMs]);
 
@@ -365,6 +484,56 @@ function parseArrayField(val: any): string[] {
     });
   }, [materials, user, studentClass, availableSubjects]);
 
+  // Dedicated setters updating the consolidated state atomically
+  const setExams = useCallback<React.Dispatch<React.SetStateAction<Exam[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      exams: typeof action === 'function' ? action(prev.exams) : action,
+    }));
+  }, []);
+
+  const setMaterials = useCallback<React.Dispatch<React.SetStateAction<StudyMaterial[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      materials: typeof action === 'function' ? action(prev.materials) : action,
+    }));
+  }, []);
+
+  const setCompletedSubmissions = useCallback<React.Dispatch<React.SetStateAction<ExamSubmission[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      completedSubmissions: typeof action === 'function' ? action(prev.completedSubmissions) : action,
+    }));
+  }, []);
+
+  const setCompletedExamIds = useCallback<React.Dispatch<React.SetStateAction<string[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      completedExamIds: typeof action === 'function' ? action(prev.completedExamIds) : action,
+    }));
+  }, []);
+
+  const setClasses = useCallback<React.Dispatch<React.SetStateAction<PirivenaClass[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      classes: typeof action === 'function' ? action(prev.classes) : action,
+    }));
+  }, []);
+
+  const setSubjects = useCallback<React.Dispatch<React.SetStateAction<Subject[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      subjects: typeof action === 'function' ? action(prev.subjects) : action,
+    }));
+  }, []);
+
+  const setTeachers = useCallback<React.Dispatch<React.SetStateAction<User[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      teachers: typeof action === 'function' ? action(prev.teachers) : action,
+    }));
+  }, []);
+
   return {
     exams,
     materials,
@@ -385,5 +554,8 @@ function parseArrayField(val: any): string[] {
     setCompletedSubmissions,
     setExams,
     setMaterials,
+    setClasses,
+    setSubjects,
+    setTeachers,
   };
 }

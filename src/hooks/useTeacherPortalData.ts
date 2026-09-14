@@ -1,13 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import type { PirivenaClass, Subject, User, Exam, StudyMaterial } from '../types';
-import { classesApi, subjectsApi, examsApi, materialsApi, studentsApi, teachersApi } from '../api';
+import { examsApi, materialsApi, studentsApi } from '../api';
 import { appLifecycleManager } from '../services/appLifecycleManager';
+import {
+  getCachedOrFetchClasses,
+  getCachedOrFetchSubjects,
+  invalidateMetadataCache,
+} from './useStudentPortalData';
 
 export interface UseTeacherPortalDataParams {
   classId?: string;
   subjectId?: string;
   autoRefreshIntervalMs?: number;
+}
+
+export interface TeacherPortalDataState {
+  classes: PirivenaClass[];
+  subjects: Subject[];
+  students: User[];
+  exams: Exam[];
+  materials: StudyMaterial[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface UseTeacherPortalDataReturn {
@@ -33,6 +48,34 @@ export interface UseTeacherPortalDataReturn {
   setStudents: React.Dispatch<React.SetStateAction<User[]>>;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Scoped Students Cache per Class ID (5-minute TTL)
+// Prevents repeatedly downloading entire student lists on every render or tab switch
+// ─────────────────────────────────────────────────────────────────────────────
+const STUDENTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const scopedStudentsCache = new Map<string, { data: User[]; timestamp: number }>();
+
+export function invalidateTeacherStudentsCache(classId?: string) {
+  if (classId) {
+    scopedStudentsCache.delete(classId);
+  } else {
+    scopedStudentsCache.clear();
+  }
+}
+
+async function fetchScopedStudents(classId?: string): Promise<User[]> {
+  const cacheKey = classId || '__ALL__';
+  const cached = scopedStudentsCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < STUDENTS_CACHE_TTL_MS) {
+    return cached.data;
+  }
+  const result = await studentsApi.getStudents(classId ? { classId } : undefined).catch(() => []);
+  const safeResult = Array.isArray(result) ? result : [];
+  scopedStudentsCache.set(cacheKey, { data: safeResult, timestamp: now });
+  return safeResult;
+}
+
 export function useTeacherPortalData({
   classId,
   subjectId,
@@ -40,30 +83,18 @@ export function useTeacherPortalData({
 }: UseTeacherPortalDataParams = {}): UseTeacherPortalDataReturn {
   const { user } = useAuth();
 
-  const [classes, setClasses] = useState<PirivenaClass[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [students, setStudents] = useState<User[]>([]);
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [materials, setMaterials] = useState<StudyMaterial[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // Consolidated single atomic state for Teacher Portal data
+  const [portalState, setPortalState] = useState<TeacherPortalDataState>(() => ({
+    classes: [],
+    subjects: [],
+    students: [],
+    exams: [],
+    materials: [],
+    isLoading: true,
+    error: null,
+  }));
 
-  function parseArrayField(val: any): string[] {
-    if (!val) return [];
-    if (Array.isArray(val)) return val.map((x) => String(x).trim()).filter(Boolean);
-    if (typeof val === 'string') {
-      const trimmed = val.trim();
-      if (!trimmed) return [];
-      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-        try {
-          const parsed = JSON.parse(trimmed);
-          if (Array.isArray(parsed)) return parsed.map((x) => String(x).trim()).filter(Boolean);
-        } catch {}
-      }
-      return trimmed.split(',').map((x) => x.trim()).filter(Boolean);
-    }
-    return [];
-  }
+  const { classes, subjects, students, exams, materials, isLoading, error } = portalState;
 
   // Authoritative teacher assignments (teacher_assignments tuple relation)
   const teacherAssignments = useMemo(() => {
@@ -189,37 +220,80 @@ export function useTeacherPortalData({
     return true;
   }, [user, classId, subjectId, teacherAssignments]);
 
-  // Main data fetching function
+  // Main data fetching function utilizing cached metadata & scoped API calls
   const fetchData = useCallback(async () => {
     if (!user) return;
-    setIsLoading(true);
-    setError(null);
+    setPortalState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       // Determine query scope for API calls
       const effectiveClassId = classId && classId !== 'all' ? classId : undefined;
       const effectiveSubjectId = subjectId && subjectId !== 'all' ? subjectId : undefined;
 
+      // Determine student scope: for teacher, only query assigned classes if not admin
+      let studentsPromise: Promise<User[]>;
+      if (effectiveClassId) {
+        studentsPromise = fetchScopedStudents(effectiveClassId);
+      } else if (user.role === 'admin' || user.role === 'superadmin') {
+        studentsPromise = fetchScopedStudents(undefined);
+      } else if (teacherAssignments.length > 0) {
+        // Teacher assignments: fetch students for teacher's first assigned class or unique assigned classes
+        const assignedClassIds = Array.from(
+          new Set(teacherAssignments.map((a) => String(a.classId || '').trim()).filter(Boolean))
+        );
+        if (assignedClassIds.length === 1) {
+          studentsPromise = fetchScopedStudents(assignedClassIds[0]);
+        } else if (assignedClassIds.length > 1) {
+          studentsPromise = Promise.all(assignedClassIds.map((cid) => fetchScopedStudents(cid))).then(
+            (arrays) => {
+              const seen = new Set<string>();
+              const combined: User[] = [];
+              for (const arr of arrays) {
+                for (const stu of arr) {
+                  const sId = stu.id || stu.customId;
+                  if (sId && !seen.has(sId)) {
+                    seen.add(sId);
+                    combined.push(stu);
+                  }
+                }
+              }
+              return combined;
+            }
+          );
+        } else {
+          studentsPromise = Promise.resolve([]);
+        }
+      } else {
+        studentsPromise = Promise.resolve([]);
+      }
+
       const [cData, subData, eData, uData, mData] = await Promise.all([
-        classesApi.getClasses().catch(() => []),
-        subjectsApi.getSubjects().catch(() => []),
+        getCachedOrFetchClasses(),
+        getCachedOrFetchSubjects(),
         examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []),
-        studentsApi.getStudents({ classId: effectiveClassId }).catch(() => []),
+        studentsPromise.catch(() => []),
         materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []),
       ]);
 
-      if (Array.isArray(cData)) setClasses(cData);
-      if (Array.isArray(subData)) setSubjects(subData);
-      if (Array.isArray(eData)) setExams(eData);
-      if (Array.isArray(uData)) setStudents(uData);
-      if (Array.isArray(mData)) setMaterials(mData);
+      setPortalState((prev) => ({
+        ...prev,
+        classes: Array.isArray(cData) ? cData : prev.classes,
+        subjects: Array.isArray(subData) ? subData : prev.subjects,
+        exams: Array.isArray(eData) ? eData : prev.exams,
+        students: Array.isArray(uData) ? uData : prev.students,
+        materials: Array.isArray(mData) ? mData : prev.materials,
+        isLoading: false,
+        error: null,
+      }));
     } catch (err: any) {
       console.error('Error fetching teacher data:', err);
-      setError(err?.message || 'Failed to fetch teacher portal data');
-    } finally {
-      setIsLoading(false);
+      setPortalState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: err?.message || 'Failed to fetch teacher portal data',
+      }));
     }
-  }, [user?.id, classId, subjectId]);
+  }, [user?.id, user?.role, classId, subjectId, teacherAssignments]);
 
   // Initial load and live sync hooks
   useEffect(() => {
@@ -245,18 +319,35 @@ export function useTeacherPortalData({
     };
 
     const handleWindowSync = () => debouncedFetch();
+
+    const handleClassesUpdated = () => {
+      invalidateMetadataCache('classes');
+      debouncedFetch();
+    };
+
+    const handleSubjectsUpdated = () => {
+      invalidateMetadataCache('subjects');
+      debouncedFetch();
+    };
+
+    const handleUsersUpdated = () => {
+      invalidateMetadataCache('teachers');
+      invalidateTeacherStudentsCache();
+      debouncedFetch();
+    };
+
     window.addEventListener('refresh-portal-data', handleWindowSync);
-    window.addEventListener('pirivena-classes-updated', handleWindowSync);
-    window.addEventListener('pirivena-subjects-updated', handleWindowSync);
-    window.addEventListener('pirivena-users-updated', handleWindowSync);
+    window.addEventListener('pirivena-classes-updated', handleClassesUpdated);
+    window.addEventListener('pirivena-subjects-updated', handleSubjectsUpdated);
+    window.addEventListener('pirivena-users-updated', handleUsersUpdated);
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       if (cleanupPoll) cleanupPoll();
       window.removeEventListener('refresh-portal-data', handleWindowSync);
-      window.removeEventListener('pirivena-classes-updated', handleWindowSync);
-      window.removeEventListener('pirivena-subjects-updated', handleWindowSync);
-      window.removeEventListener('pirivena-users-updated', handleWindowSync);
+      window.removeEventListener('pirivena-classes-updated', handleClassesUpdated);
+      window.removeEventListener('pirivena-subjects-updated', handleSubjectsUpdated);
+      window.removeEventListener('pirivena-users-updated', handleUsersUpdated);
     };
   }, [fetchData, autoRefreshIntervalMs]);
 
@@ -322,6 +413,42 @@ export function useTeacherPortalData({
       return Boolean(uploaderId && teacherKeys.has(uploaderId));
     });
   }, [materials, user]);
+
+  // Dedicated atomic setters
+  const setExams = useCallback<React.Dispatch<React.SetStateAction<Exam[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      exams: typeof action === 'function' ? action(prev.exams) : action,
+    }));
+  }, []);
+
+  const setMaterials = useCallback<React.Dispatch<React.SetStateAction<StudyMaterial[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      materials: typeof action === 'function' ? action(prev.materials) : action,
+    }));
+  }, []);
+
+  const setClasses = useCallback<React.Dispatch<React.SetStateAction<PirivenaClass[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      classes: typeof action === 'function' ? action(prev.classes) : action,
+    }));
+  }, []);
+
+  const setSubjects = useCallback<React.Dispatch<React.SetStateAction<Subject[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      subjects: typeof action === 'function' ? action(prev.subjects) : action,
+    }));
+  }, []);
+
+  const setStudents = useCallback<React.Dispatch<React.SetStateAction<User[]>>>((action) => {
+    setPortalState((prev) => ({
+      ...prev,
+      students: typeof action === 'function' ? action(prev.students) : action,
+    }));
+  }, []);
 
   return {
     classes,
