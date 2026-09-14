@@ -159,6 +159,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
   const [manualScoreInput, setManualScoreInput] = useState<string>('');
   const [isSavingFeedback, setIsSavingFeedback] = useState<boolean>(false);
   const [feedbackSaveSuccess, setFeedbackSaveSuccess] = useState<boolean>(false);
+  const [isSavingExam, setIsSavingExam] = useState<boolean>(false);
 
   // Roster Filter State
   const [rosterClassFilter, setRosterClassFilter] = useState<string>('all');
@@ -1390,6 +1391,8 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
 
   const handleSaveExam = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingExam) return;
+    setIsSavingExam(true);
     const totalMarks = questionsList.reduce((acc, q) => acc + (Number(q.marks) || 0), 0);
     const parsedStart = new Date(startDate);
     const parsedEnd = new Date(endDate);
@@ -1439,6 +1442,8 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
     } catch (e: any) {
       console.error(e);
       toast.error(`විභාගය සුරැකීමට නොහැකි විය: ${e.message || 'දෝෂයකි'}`);
+    } finally {
+      setIsSavingExam(false);
     }
   };
 
@@ -2003,6 +2008,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
           setRawAiJsonContent={setRawAiJsonContent}
           formatQuestionsTo9ColumnJson={formatQuestionsTo9ColumnJson}
           handleSaveExam={handleSaveExam}
+          isSavingExam={isSavingExam}
         />
       )}
 

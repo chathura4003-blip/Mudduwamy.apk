@@ -2934,3 +2934,49 @@ main {
   background: rgba(156, 163, 175, 0.6);
 }
 
+/* ========================================================================= */
+/* ♿ ACCESSIBILITY & KEYBOARD FOCUS-VISIBLE SYSTEM (WCAG 2.1 AA)            */
+/* ========================================================================= */
+:focus-visible {
+  outline: 2px solid #f59e0b !important;
+  outline-offset: 2px !important;
+}
+
+/* Suppress redundant default outline when focused via mouse or touch */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 📱 Standard Touch Target Dimensions (>= 44px on mobile) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Form controls accessibility and mobile interaction */
+input, select, textarea {
+  touch-action: manipulation;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+}
+
+

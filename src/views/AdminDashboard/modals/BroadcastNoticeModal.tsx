@@ -14,6 +14,7 @@ import {
   Eye,
   Pipette,
   Radio,
+  Loader2,
 } from 'lucide-react';
 import { useLanguage } from '../../../context/LanguageContext';
 import { triggerHaptic } from '../../../utils/haptics';
@@ -26,6 +27,7 @@ interface BroadcastNoticeModalProps {
   setNoticeForm: React.Dispatch<React.SetStateAction<BroadcastNoticeFormState>>;
   onSave: (e: React.FormEvent) => void;
   onApplyTemplate: (tplKey: string) => void;
+  isSaving?: boolean;
 }
 
 const colorPresets = [
@@ -48,6 +50,7 @@ export const BroadcastNoticeModal: React.FC<BroadcastNoticeModalProps> = ({
   setNoticeForm,
   onSave,
   onApplyTemplate,
+  isSaving = false,
 }) => {
   const { language } = useLanguage();
   const isSi = language === 'si';
@@ -428,20 +431,31 @@ export const BroadcastNoticeModal: React.FC<BroadcastNoticeModalProps> = ({
                     triggerHaptic('light');
                     onClose();
                   }}
-                  className="w-full sm:flex-1 py-3 min-h-[44px] bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl transition cursor-pointer active:scale-95 flex items-center justify-center touch-manipulation"
+                  disabled={isSaving}
+                  className="w-full sm:flex-1 py-3 min-h-[44px] bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-bold rounded-2xl transition cursor-pointer active:scale-95 flex items-center justify-center touch-manipulation"
                 >
                   {isSi ? 'අවලංගු කරන්න' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
-                  className="w-full sm:flex-2 py-3 min-h-[44px] bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-black rounded-2xl shadow-lg transition cursor-pointer active:scale-95 flex items-center justify-center gap-2 touch-manipulation group"
+                  disabled={isSaving}
+                  className="w-full sm:flex-2 py-3 min-h-[44px] bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 disabled:opacity-50 text-white dark:text-slate-900 font-black rounded-2xl shadow-lg transition cursor-pointer active:scale-95 flex items-center justify-center gap-2 touch-manipulation group"
                 >
-                  <Bell className="w-4 h-4 animate-icon-bell" />
-                  <span>
-                    {editingNoticeId
-                      ? isSi ? 'යාවත්කාලීන කරන්න' : 'Update Notice'
-                      : isSi ? '📢 සජීවීව විකාශය කරන්න' : 'Broadcast Live'}
-                  </span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white dark:text-slate-900" />
+                      <span>{isSi ? 'විකාශය වෙමින් පවතී...' : 'Broadcasting...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="w-4 h-4 animate-icon-bell" />
+                      <span>
+                        {editingNoticeId
+                          ? isSi ? 'යාවත්කාලීන කරන්න' : 'Update Notice'
+                          : isSi ? '📢 සජීවීව විකාශය කරන්න' : 'Broadcast Live'}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

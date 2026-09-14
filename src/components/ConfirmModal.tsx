@@ -72,6 +72,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirm-modal-title"
+            aria-describedby="confirm-modal-description"
           >
             {/* Top Accent Strip */}
             <div
@@ -124,7 +125,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
             {/* Body */}
             <div className="px-5 py-4">
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-stone-300 font-medium">
+              <p
+                id="confirm-modal-description"
+                className="text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-stone-300 font-medium"
+              >
                 {message}
               </p>
             </div>

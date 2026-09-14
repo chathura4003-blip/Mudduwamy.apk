@@ -43,10 +43,10 @@ interface AddTeacherModalProps {
   copiedKey?: string | null;
   onCopy?: (text: string, key: string) => void;
   onGenerateRandomPassword?: (role: string) => void;
-  onImageFileChange?: (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => void;
   onSaveTeacher?: (e: React.FormEvent) => void;
   onSave?: (e: React.FormEvent) => void;
   toast?: any;
+  isSaving?: boolean;
 }
 
 export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
@@ -68,6 +68,7 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
   onSaveTeacher: propOnSaveTeacher,
   onSave,
   toast: propToast,
+  isSaving = false,
 }) => {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [classSearch, setClassSearch] = useState('');
@@ -946,7 +947,8 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setTeacherFormStep((prev) => Math.max(1, prev - 1))}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 touch-manipulation"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 disabled:opacity-50 text-stone-800 dark:text-stone-200 font-bold text-xs rounded-2xl transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 touch-manipulation"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>පසුපසට (Back)</span>
@@ -955,7 +957,8 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-stone-100 dark:bg-stone-900 hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400 font-bold text-xs rounded-2xl transition flex items-center justify-center cursor-pointer active:scale-95 touch-manipulation"
+                disabled={isSaving}
+                className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-stone-100 dark:bg-stone-900 hover:bg-stone-200 dark:hover:bg-stone-800 disabled:opacity-50 text-stone-600 dark:text-stone-400 font-bold text-xs rounded-2xl transition flex items-center justify-center cursor-pointer active:scale-95 touch-manipulation"
               >
                 අවලංගු කරන්න (Cancel)
               </button>
@@ -966,6 +969,7 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
                 <button
                   key={`teacher-next-step-${teacherFormStep}`}
                   type="button"
+                  disabled={isSaving}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -975,7 +979,7 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
                     }
                     setTeacherFormStep((prev) => Math.min(3, prev + 1));
                   }}
-                  className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs rounded-2xl transition shadow-md flex items-center justify-center gap-1 cursor-pointer active:scale-95 touch-manipulation group"
+                  className="w-full sm:w-auto px-5 py-2.5 min-h-[44px] bg-amber-800 hover:bg-amber-900 disabled:opacity-50 text-white font-bold text-xs rounded-2xl transition shadow-md flex items-center justify-center gap-1 cursor-pointer active:scale-95 touch-manipulation group"
                 >
                   <span>ඊළඟ පියවර (Next Step)</span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -984,14 +988,24 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({
                 <button
                   key="teacher-submit-step-3"
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-900 hover:to-amber-950 text-white font-bold text-xs rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 touch-manipulation group"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto px-6 py-2.5 min-h-[44px] bg-gradient-to-r from-amber-800 to-amber-900 hover:from-amber-900 hover:to-amber-950 disabled:opacity-50 text-white font-bold text-xs rounded-2xl transition shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 touch-manipulation group"
                 >
-                  <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
-                  <span>
-                    {editingTeacher
-                      ? 'ලියාපදිංචිය යාවත්කාලීන කරන්න (Update Profile)'
-                      : 'ගුරුභවත් ලියාපදිංචි කරන්න (Save Academic Teacher)'}
-                  </span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>සුරැකෙමින් පවතී...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
+                      <span>
+                        {editingTeacher
+                          ? 'ලියාපදිංචිය යාවත්කාලීන කරන්න (Update Profile)'
+                          : 'ගුරුභවත් ලියාපදිංචි කරන්න (Save Academic Teacher)'}
+                      </span>
+                    </>
+                  )}
                 </button>
               )}
             </div>

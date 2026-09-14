@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { BookOpen, Sparkles, Check, X, Tag, Hash } from 'lucide-react';
+import { BookOpen, Sparkles, Check, X, Tag, Hash, Loader2 } from 'lucide-react';
 import { Subject, User } from '../../../types';
 import { SUBJECT_CATEGORIES } from '../constants';
 import { generateSmartSubjectCode } from '../../../utils/subjectHelper';
@@ -17,6 +17,7 @@ interface SubjectModalProps {
   teachers?: User[];
   onSaveSubject?: (e: React.FormEvent) => void;
   onSave?: (e: React.FormEvent) => void;
+  isSaving?: boolean;
 }
 
 export const SubjectModal: React.FC<SubjectModalProps> = ({
@@ -29,6 +30,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
   teachers = [],
   onSaveSubject,
   onSave,
+  isSaving = false,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -263,17 +265,28 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                     triggerHaptic('light');
                     onClose();
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-stone-300 hover:bg-slate-200 dark:hover:bg-stone-700 font-bold text-xs rounded-xl transition cursor-pointer active:scale-95 shadow-2xs border border-slate-200 dark:border-stone-700 flex items-center justify-center touch-manipulation"
+                  disabled={isSaving}
+                  className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-stone-300 hover:bg-slate-200 dark:hover:bg-stone-700 disabled:opacity-50 font-bold text-xs rounded-xl transition cursor-pointer active:scale-95 shadow-2xs border border-slate-200 dark:border-stone-700 flex items-center justify-center touch-manipulation"
                 >
                   අවලංගු කරන්න
                 </button>
                 <button
                   type="submit"
                   onClick={() => triggerHaptic('medium')}
-                  className="w-full sm:flex-1 py-2.5 min-h-[44px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-black text-xs rounded-xl transition shadow-md shadow-cyan-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 touch-manipulation group"
+                  disabled={isSaving}
+                  className="w-full sm:flex-1 py-2.5 min-h-[44px] bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 disabled:opacity-50 text-white font-black text-xs rounded-xl transition shadow-md shadow-cyan-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 touch-manipulation group"
                 >
-                  <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
-                  <span>{editingSubject ? 'විෂය තොරතුරු සුරකින්න (Update)' : 'නව විෂයය සුරකින්න (Save)'}</span>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>සුරැකෙමින් පවතී...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
+                      <span>{editingSubject ? 'විෂය තොරතුරු සුරකින්න (Update)' : 'නව විෂයය සුරකින්න (Save)'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

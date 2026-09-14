@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Check,
   FileCode,
+  Loader2,
 } from 'lucide-react';
 import { Question, ClassItem, SubjectItem } from '../types';
 import { checkOptionMatch } from '../utils';
@@ -103,6 +104,7 @@ interface CreateExamModalProps {
   setRawAiJsonContent: (c: string) => void;
   formatQuestionsTo9ColumnJson: (questions: Question[]) => string;
   handleSaveExam: (e: React.FormEvent) => void;
+  isSavingExam?: boolean;
 }
 
 export const CreateExamModal: React.FC<CreateExamModalProps> = ({
@@ -183,6 +185,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
   setRawAiJsonContent,
   formatQuestionsTo9ColumnJson,
   handleSaveExam,
+  isSavingExam = false,
 }) => {
   const modalContent = (
     <AnimatePresence>
@@ -1617,20 +1620,31 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
             <div className="flex gap-2.5 pt-3 border-t border-slate-200 dark:border-stone-800 shrink-0">
               <button
                 type="submit"
-                className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 min-h-[46px]"
+                disabled={isSavingExam}
+                className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-60 text-stone-950 font-black text-xs sm:text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 min-h-[46px]"
               >
-                <CheckCircle2 className="w-4 h-4 text-stone-950" />
-                <span>
-                  {editingExamId ? '💾 ප්‍රශ්න පත්‍රය සුරකින්න (Save Changes)' : '🚀 ප්‍රශ්න පත්‍රය පළ කරන්න (Publish Exam)'}
-                </span>
+                {isSavingExam ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-stone-950 animate-spin" />
+                    <span>ප්‍රශ්න පත්‍රය සුරැකෙමින් පවතී...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-stone-950" />
+                    <span>
+                      {editingExamId ? '💾 ප්‍රශ්න පත්‍රය සුරකින්න (Save Changes)' : '🚀 ප්‍රශ්න පත්‍රය පළ කරන්න (Publish Exam)'}
+                    </span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
+                disabled={isSavingExam}
                 onClick={() => {
                   triggerHaptic('light');
                   setShowCreateExamModal(false);
                 }}
-                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-slate-700 dark:text-stone-300 font-bold text-xs sm:text-sm rounded-2xl transition cursor-pointer active:scale-95 min-h-[46px]"
+                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-stone-800 dark:hover:bg-stone-700 disabled:opacity-40 text-slate-700 dark:text-stone-300 font-bold text-xs sm:text-sm rounded-2xl transition cursor-pointer active:scale-95 min-h-[46px]"
               >
                 අවලංගු කරන්න
               </button>

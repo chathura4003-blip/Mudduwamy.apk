@@ -13,6 +13,7 @@ import {
   MapPin,
   Tag,
   Hash,
+  Loader2,
 } from 'lucide-react';
 import { PirivenaClass, Subject, User } from '../../../types';
 import { PIRIVENA_CATEGORIES } from '../constants';
@@ -42,6 +43,7 @@ interface ClassModalProps {
   onSaveClass?: (e: React.FormEvent) => void;
   onSave?: (e: React.FormEvent) => void;
   generateClassDefaults?: (catKey: string, lvl: string) => { code: string; name: string; nameSinhala: string };
+  isSaving?: boolean;
 }
 
 export const ClassModal: React.FC<ClassModalProps> = ({
@@ -59,6 +61,7 @@ export const ClassModal: React.FC<ClassModalProps> = ({
     name: `${lvl} Class`,
     nameSinhala: `${lvl} පන්තිය`,
   }),
+  isSaving = false,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -520,16 +523,27 @@ export const ClassModal: React.FC<ClassModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-stone-700 font-bold text-xs rounded-xl transition cursor-pointer active:scale-95 flex items-center justify-center touch-manipulation"
+              disabled={isSaving}
+              className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] bg-slate-100 dark:bg-stone-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-stone-700 disabled:opacity-50 font-bold text-xs rounded-xl transition cursor-pointer active:scale-95 flex items-center justify-center touch-manipulation"
             >
               අවලංගු කරන්න
             </button>
             <button
               type="submit"
-              className="w-full sm:flex-1 py-2.5 min-h-[44px] bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-black text-xs rounded-xl transition shadow-md shadow-indigo-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 touch-manipulation group"
+              disabled={isSaving}
+              className="w-full sm:flex-1 py-2.5 min-h-[44px] bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50 text-white font-black text-xs rounded-xl transition shadow-md shadow-indigo-500/20 cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 touch-manipulation group"
             >
-              <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
-              <span>{editingClass ? 'පන්ති තොරතුරු සුරකින්න (Update Class)' : 'නව පන්තිය නිර්මාණය කරන්න (Save Class)'}</span>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>සුරැකෙමින් පවතී...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[3] animate-icon-pulse-glow" />
+                  <span>{editingClass ? 'පන්ති තොරතුරු සුරකින්න (Update Class)' : 'නව පන්තිය නිර්මාණය කරන්න (Save Class)'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

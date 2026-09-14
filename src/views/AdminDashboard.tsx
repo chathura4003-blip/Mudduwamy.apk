@@ -734,6 +734,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isSavingAllKeys, setIsSavingAllKeys] = useState(false);
   const [allKeysSaveSuccess, setAllKeysSaveSuccess] = useState(false);
 
+  // Form Submission Hardening & In-Flight Re-entrancy Guards
+  const [isSavingStudent, setIsSavingStudent] = useState(false);
+  const [isSavingTeacher, setIsSavingTeacher] = useState(false);
+  const [isSavingClass, setIsSavingClass] = useState(false);
+  const [isSavingSubject, setIsSavingSubject] = useState(false);
+  const [isSavingNotice, setIsSavingNotice] = useState(false);
+
   const handleSaveGeminiKeyOnly = async () => {
     setIsSavingGeminiKey(true);
     setGeminiSaveSuccess(false);
@@ -1399,6 +1406,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   const handleSaveNotice = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingNotice) return;
+    setIsSavingNotice(true);
     try {
       if (editingNoticeId) {
         await broadcastApi.updateNotice(editingNoticeId, noticeForm);
@@ -1412,6 +1421,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       fetchDashboardMetrics();
     } catch (e: any) {
       toast.error('නිවේදනය සුරැකීමට නොහැකි විය: ' + e.message);
+    } finally {
+      setIsSavingNotice(false);
     }
   };
 
@@ -1537,6 +1548,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingStudent) return;
+    setIsSavingStudent(true);
     try {
       const targetClass = classes.find(
         (c) =>
@@ -1604,6 +1617,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       window.dispatchEvent(new CustomEvent('site-data-updated'));
     } catch (err: any) {
       toast.error('ශිෂ්‍ය තොරතුරු සුරැකීමට නොහැකි විය: ' + err.message);
+    } finally {
+      setIsSavingStudent(false);
     }
   };
 
@@ -1747,6 +1762,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   const handleSaveTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingTeacher) return;
+    setIsSavingTeacher(true);
     try {
       const finalTeacherAssignments = teacherForm.teacherAssignments || [];
       const derivedClasses = Array.from(
@@ -1799,6 +1816,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       window.dispatchEvent(new CustomEvent('site-data-updated'));
     } catch (err: any) {
       toast.error('ගුරු තොරතුරු සුරැකීමට නොහැකි විය: ' + err.message);
+    } finally {
+      setIsSavingTeacher(false);
     }
   };
 
@@ -1873,6 +1892,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingClass) return;
+    setIsSavingClass(true);
     try {
       const payload: Partial<PirivenaClass> = {
         code: classForm.code,
@@ -1912,6 +1933,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       window.dispatchEvent(new CustomEvent('site-data-updated'));
     } catch (err: any) {
       toast.error('පන්ති කාමරය සුරැකීමට නොහැකි විය: ' + err.message);
+    } finally {
+      setIsSavingClass(false);
     }
   };
 
@@ -1988,6 +2011,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
 
   const handleSaveSubject = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingSubject) return;
+    setIsSavingSubject(true);
     try {
       const payload: Partial<Subject> = {
         code: subjectForm.code,
@@ -2025,6 +2050,8 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
       window.dispatchEvent(new CustomEvent('site-data-updated'));
     } catch (err: any) {
       toast.error('විෂයය සුරැකීමට නොහැකි විය: ' + err.message);
+    } finally {
+      setIsSavingSubject(false);
     }
   };
 
@@ -2550,6 +2577,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
           onSave={handleSaveStudent}
           step={studentFormStep}
           setStep={setStudentFormStep}
+          isSaving={isSavingStudent}
         />
       )}
 
@@ -2565,6 +2593,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
           onSave={handleSaveTeacher}
           step={teacherFormStep}
           setStep={setTeacherFormStep}
+          isSaving={isSavingTeacher}
         />
       )}
 
@@ -2578,6 +2607,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
           teachers={teachers}
           subjects={subjects}
           onSave={handleSaveClass}
+          isSaving={isSavingClass}
         />
       )}
 
@@ -2590,6 +2620,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
           setSubjectForm={setSubjectForm}
           teachers={teachers}
           onSave={handleSaveSubject}
+          isSaving={isSavingSubject}
         />
       )}
 
@@ -2602,6 +2633,7 @@ function isSameDataArray(prev: any[], next: any[]): boolean {
           setNoticeForm={setNoticeForm}
           onSave={handleSaveNotice}
           onApplyTemplate={handleApplyNoticeTemplate}
+          isSaving={isSavingNotice}
         />
       )}
 
