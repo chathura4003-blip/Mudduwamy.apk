@@ -26,22 +26,20 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 
-// Modular Tabs
-import {
-  OverviewTab,
-  MaterialsTab,
-  ExamsTab,
-  LibraryTab,
-  TimetableTab,
-  SettingsTab,
-} from './StudentPortal/tabs';
+// Eager Overview Tab for Instant 0ms First-Paint
+import { OverviewTab } from './StudentPortal/tabs/OverviewTab';
 
-// Modular Modals
-import {
-  SubmissionReviewModal,
-  MaterialViewerModal,
-  BookReaderModal,
-} from './StudentPortal/components';
+// Dynamic Lazy Loaders for Secondary Tabs
+const MaterialsTab = React.lazy(() => import('./StudentPortal/tabs/MaterialsTab').then((m) => ({ default: m.MaterialsTab })));
+const ExamsTab = React.lazy(() => import('./StudentPortal/tabs/ExamsTab').then((m) => ({ default: m.ExamsTab })));
+const LibraryTab = React.lazy(() => import('./StudentPortal/tabs/LibraryTab').then((m) => ({ default: m.LibraryTab })));
+const TimetableTab = React.lazy(() => import('./StudentPortal/tabs/TimetableTab').then((m) => ({ default: m.TimetableTab })));
+const SettingsTab = React.lazy(() => import('./StudentPortal/tabs/SettingsTab').then((m) => ({ default: m.SettingsTab })));
+
+// Dynamic Lazy Loaders for Heavy Student Modals
+const SubmissionReviewModal = React.lazy(() => import('./StudentPortal/components/SubmissionReviewModal').then((m) => ({ default: m.SubmissionReviewModal })));
+const MaterialViewerModal = React.lazy(() => import('./StudentPortal/components/MaterialViewerModal').then((m) => ({ default: m.MaterialViewerModal })));
+const BookReaderModal = React.lazy(() => import('./StudentPortal/components/BookReaderModal').then((m) => ({ default: m.BookReaderModal })));
 
 interface StudentPortalProps {
   onOpenQrModal: () => void;
@@ -1352,148 +1350,142 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
           )}
 
           {/* ─────────────────────────────────────────────────────────────
-              TAB 2: STUDY MATERIALS & CLASS NOTES
+              SECONDARY SUB-TABS (LAZY-LOADED WITH SUSPENSE)
               ───────────────────────────────────────────────────────────── */}
-          {activePortalTab === 'materials' && (
-            <MaterialsTab
-              filteredMaterials={filteredMaterials}
-              subjects={subjects}
-              teachers={teachers}
-              availableStudentSubjects={availableStudentSubjects}
-              matSearch={matSearch}
-              setMatSearch={setMatSearch}
-              matTypeFilter={matTypeFilter}
-              setMatTypeFilter={setMatTypeFilter}
-              matSubjectFilter={matSubjectFilter}
-              setMatSubjectFilter={setMatSubjectFilter}
-              handleOpenMaterialViewer={handleOpenMaterialViewer}
-              getMaterialTypeBadge={getMaterialTypeBadge}
-              isImageResource={isImageResource}
-              isSi={isSi}
-            />
-          )}
+          <React.Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center"><PageLoadingSpinner message="අංශය පූරණය වෙමින් පවතී..." /></div>}>
+            {/* TAB 2: STUDY MATERIALS & CLASS NOTES */}
+            {activePortalTab === 'materials' && (
+              <MaterialsTab
+                filteredMaterials={filteredMaterials}
+                subjects={subjects}
+                teachers={teachers}
+                availableStudentSubjects={availableStudentSubjects}
+                matSearch={matSearch}
+                setMatSearch={setMatSearch}
+                matTypeFilter={matTypeFilter}
+                setMatTypeFilter={setMatTypeFilter}
+                matSubjectFilter={matSubjectFilter}
+                setMatSubjectFilter={setMatSubjectFilter}
+                handleOpenMaterialViewer={handleOpenMaterialViewer}
+                getMaterialTypeBadge={getMaterialTypeBadge}
+                isImageResource={isImageResource}
+                isSi={isSi}
+              />
+            )}
 
-          {/* ─────────────────────────────────────────────────────────────
-              TAB 3 & 4: ONLINE EXAMINATIONS & RESULTS
-              ───────────────────────────────────────────────────────────── */}
-          {(activePortalTab === 'exams' || activePortalTab === 'results') && (
-            <ExamsTab
-              activeUnattemptedExams={activeUnattemptedExams}
-              completedSubmissions={completedSubmissions}
-              exams={exams}
-              subjects={subjects}
-              studentPerformance={studentPerformance}
-              setActiveExam={setActiveExam}
-              setViewingSubmissionReview={setViewingSubmissionReview}
-              switchSubTab={switchSubTab}
-              activeSubTab={activePortalTab}
-              isSi={isSi}
-            />
-          )}
+            {/* TAB 3 & 4: ONLINE EXAMINATIONS & RESULTS */}
+            {(activePortalTab === 'exams' || activePortalTab === 'results') && (
+              <ExamsTab
+                activeUnattemptedExams={activeUnattemptedExams}
+                completedSubmissions={completedSubmissions}
+                exams={exams}
+                subjects={subjects}
+                studentPerformance={studentPerformance}
+                setActiveExam={setActiveExam}
+                setViewingSubmissionReview={setViewingSubmissionReview}
+                switchSubTab={switchSubTab}
+                activeSubTab={activePortalTab}
+                isSi={isSi}
+              />
+            )}
 
-          {/* ─────────────────────────────────────────────────────────────
-              TAB 5: DIGITAL LIBRARY & DHAMMA E-BOOKS
-              ───────────────────────────────────────────────────────────── */}
-          {activePortalTab === 'library' && (
-            <LibraryTab
-              libraryBooks={libraryBooks}
-              filteredLibraryBooks={filteredLibraryBooks}
-              librarySearch={librarySearch}
-              setLibrarySearch={setLibrarySearch}
-              selectedLibraryCategory={selectedLibraryCategory}
-              setSelectedLibraryCategory={setSelectedLibraryCategory}
-              libraryCategories={libraryCategories}
-              setViewingLibraryBook={setViewingLibraryBook}
-              isSi={isSi}
-            />
-          )}
+            {/* TAB 5: DIGITAL LIBRARY & DHAMMA E-BOOKS */}
+            {activePortalTab === 'library' && (
+              <LibraryTab
+                libraryBooks={libraryBooks}
+                filteredLibraryBooks={filteredLibraryBooks}
+                librarySearch={librarySearch}
+                setLibrarySearch={setLibrarySearch}
+                selectedLibraryCategory={selectedLibraryCategory}
+                setSelectedLibraryCategory={setSelectedLibraryCategory}
+                libraryCategories={libraryCategories}
+                setViewingLibraryBook={setViewingLibraryBook}
+                isSi={isSi}
+              />
+            )}
 
-          {/* ─────────────────────────────────────────────────────────────
-              TAB 6: CLASS TIMETABLE (පන්ති කාලසටහන)
-              ───────────────────────────────────────────────────────────── */}
-          {activePortalTab === 'timetable' && (
-            <TimetableTab
-              studentClass={studentClass}
-              dailyTimetableSlots={dailyTimetableSlots}
-              classTimetableSlots={classTimetableSlots}
-              selectedTimetableDay={selectedTimetableDay}
-              setSelectedTimetableDay={setSelectedTimetableDay}
-              isWeeklyGridView={isWeeklyGridView}
-              setIsWeeklyGridView={setIsWeeklyGridView}
-              currentLivePeriod={currentLivePeriod}
-              currentLiveTimeStr={currentLiveTimeStr}
-              activeOngoingPeriod={activeOngoingPeriod}
-              upcomingNextPeriod={upcomingNextPeriod}
-              getSubjectIconAndColor={getSubjectIconAndColor}
-              isSi={isSi}
-            />
-          )}
+            {/* TAB 6: CLASS TIMETABLE (පන්ති කාලසටහන) */}
+            {activePortalTab === 'timetable' && (
+              <TimetableTab
+                studentClass={studentClass}
+                dailyTimetableSlots={dailyTimetableSlots}
+                classTimetableSlots={classTimetableSlots}
+                selectedTimetableDay={selectedTimetableDay}
+                setSelectedTimetableDay={setSelectedTimetableDay}
+                isWeeklyGridView={isWeeklyGridView}
+                setIsWeeklyGridView={setIsWeeklyGridView}
+                currentLivePeriod={currentLivePeriod}
+                currentLiveTimeStr={currentLiveTimeStr}
+                activeOngoingPeriod={activeOngoingPeriod}
+                upcomingNextPeriod={upcomingNextPeriod}
+                getSubjectIconAndColor={getSubjectIconAndColor}
+                isSi={isSi}
+              />
+            )}
 
-          {/* ─────────────────────────────────────────────────────────────
-              TAB 7: SETTINGS & APK DETAILS (සැකසුම් සහ යෙදුම් තොරතුරු)
-              ───────────────────────────────────────────────────────────── */}
-          {activePortalTab === 'settings' && (
-            <SettingsTab
-              user={user}
-              studentClass={studentClass}
-              language={language}
-              setLanguage={setLanguage}
-              isDarkMode={isDarkMode}
-              toggleTheme={toggleTheme}
-              periodAlertsEnabled={periodAlertsEnabled}
-              handleTogglePeriodNotifications={handleTogglePeriodNotifications}
-              playNotificationSound={playNotificationSound}
-              onOpenQrModal={onOpenQrModal}
-              onOpenReportCardModal={onOpenReportCardModal}
-              isSi={isSi}
-            />
-          )}
+            {/* TAB 7: SETTINGS & APK DETAILS (සැකසුම් සහ යෙදුම් තොරතුරු) */}
+            {activePortalTab === 'settings' && (
+              <SettingsTab
+                user={user}
+                studentClass={studentClass}
+                language={language}
+                setLanguage={setLanguage}
+                isDarkMode={isDarkMode}
+                toggleTheme={toggleTheme}
+                periodAlertsEnabled={periodAlertsEnabled}
+                handleTogglePeriodNotifications={handleTogglePeriodNotifications}
+                playNotificationSound={playNotificationSound}
+                onOpenQrModal={onOpenQrModal}
+                onOpenReportCardModal={onOpenReportCardModal}
+                isSi={isSi}
+              />
+            )}
+          </React.Suspense>
         </div>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          MODAL 1: COMPLETE ANSWER PAPER REVIEW MODAL
+          MODAL DIALOGS (LAZY LOADED WITH SUSPENSE)
           ───────────────────────────────────────────────────────────── */}
-      {viewingSubmissionReview && (
-        <SubmissionReviewModal
-          review={viewingSubmissionReview}
-          user={user}
-          studentClass={studentClass}
-          onClose={() => setViewingSubmissionReview(null)}
-          isSi={isSi}
-          resolveStudentAnswer={resolveStudentAnswer}
-          isCorrectAnswerMatch={isCorrectAnswerMatch}
-        />
-      )}
+      <React.Suspense fallback={null}>
+        {/* MODAL 1: COMPLETE ANSWER PAPER REVIEW MODAL */}
+        {viewingSubmissionReview && (
+          <SubmissionReviewModal
+            review={viewingSubmissionReview}
+            user={user}
+            studentClass={studentClass}
+            onClose={() => setViewingSubmissionReview(null)}
+            isSi={isSi}
+            resolveStudentAnswer={resolveStudentAnswer}
+            isCorrectAnswerMatch={isCorrectAnswerMatch}
+          />
+        )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL 2: STUDY MATERIAL VIEWER MODAL
-          ───────────────────────────────────────────────────────────── */}
-      {viewingMaterial && (
-        <MaterialViewerModal
-          viewingMaterial={viewingMaterial}
-          onClose={() => setViewingMaterial(null)}
-          getMaterialTypeBadge={getMaterialTypeBadge}
-          isImageResource={isImageResource}
-          getPdfObjectUrl={getPdfObjectUrl}
-          openPdfInBlobTab={openPdfInBlobTab}
-          decodedTextNote={decodedTextNote || ''}
-          isSi={isSi}
-        />
-      )}
+        {/* MODAL 2: STUDY MATERIAL VIEWER MODAL */}
+        {viewingMaterial && (
+          <MaterialViewerModal
+            viewingMaterial={viewingMaterial}
+            onClose={() => setViewingMaterial(null)}
+            getMaterialTypeBadge={getMaterialTypeBadge}
+            isImageResource={isImageResource}
+            getPdfObjectUrl={getPdfObjectUrl}
+            openPdfInBlobTab={openPdfInBlobTab}
+            decodedTextNote={decodedTextNote || ''}
+            isSi={isSi}
+          />
+        )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          MODAL 3: DIGITAL LIBRARY E-BOOK READER MODAL
-          ───────────────────────────────────────────────────────────── */}
-      {viewingLibraryBook && (
-        <BookReaderModal
-          viewingLibraryBook={viewingLibraryBook}
-          onClose={() => setViewingLibraryBook(null)}
-          getPdfObjectUrl={getPdfObjectUrl}
-          openPdfInBlobTab={openPdfInBlobTab}
-          isSi={isSi}
-        />
-      )}
+        {/* MODAL 3: DIGITAL LIBRARY E-BOOK READER MODAL */}
+        {viewingLibraryBook && (
+          <BookReaderModal
+            viewingLibraryBook={viewingLibraryBook}
+            onClose={() => setViewingLibraryBook(null)}
+            getPdfObjectUrl={getPdfObjectUrl}
+            openPdfInBlobTab={openPdfInBlobTab}
+            isSi={isSi}
+          />
+        )}
+      </React.Suspense>
     </PullToRefreshWrapper>
   );
 };

@@ -304,17 +304,6 @@ export function useTeacherPortalData({
       { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
     );
 
-    // Cross-tab broadcast sync
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel('pirivena_realtime_channel');
-      bc.onmessage = (event) => {
-        if (event.data === 'refresh-portal-data') {
-          debouncedFetch();
-        }
-      };
-    } catch (e) {}
-
     let debounceTimer: any = null;
     const debouncedFetch = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
@@ -332,7 +321,6 @@ export function useTeacherPortalData({
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       cleanupPoll();
-      if (bc) bc.close();
       window.removeEventListener('refresh-portal-data', handleWindowSync);
       window.removeEventListener('pirivena-classes-updated', handleWindowSync);
       window.removeEventListener('pirivena-subjects-updated', handleWindowSync);

@@ -170,10 +170,24 @@ class LiveUpdateService {
     return this.activeUpdatePromise;
   }
 
+  public isCriticalActionActive(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      if (sessionStorage.getItem('pirivena_exam_active') === 'true') return true;
+      if (sessionStorage.getItem('pirivena_upload_active') === 'true') return true;
+    } catch (_) {}
+    return false;
+  }
+
   /**
    * Instantly reloads the application to activate the newly downloaded live update bundle
+   * Guaranteed not to interrupt active exams or ongoing uploads.
    */
   public async restartApp(): Promise<void> {
+    if (this.isCriticalActionActive()) {
+      console.log('⏸️ Live update restart deferred: Student is taking an exam or upload is active.');
+      return;
+    }
     try {
       if (this.isAvailable()) {
         await CapacitorUpdater.reload();

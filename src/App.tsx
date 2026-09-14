@@ -188,16 +188,25 @@ const MainAppContent: React.FC = () => {
     }
   }, [currentTab]);
 
-  // Initialize Android Notification Channels, OneSignal, LiveOTA Updates & Action Listeners
+  // 1. One-Time Global App Initialization (Non-blocking & Deferred)
   useEffect(() => {
-    notificationService.initializeChannels();
-    notificationService.setupNotificationListeners();
-    oneSignalService.initialize();
+    const initDeferredServices = () => {
+      notificationService.initializeChannels();
+      notificationService.setupNotificationListeners();
+      oneSignalService.initialize();
 
-    liveUpdateService.initialize().then(() => {
-      const isAuto = isAutoLiveUpdateEnabled();
-      liveUpdateService.checkForLiveUpdate({ autoApply: isAuto });
-    });
+      liveUpdateService.initialize().then(() => {
+        const isAuto = isAutoLiveUpdateEnabled();
+        liveUpdateService.checkForLiveUpdate({ autoApply: isAuto });
+      });
+    };
+
+    // Defer non-critical background services slightly so initial frame paints immediately (0ms)
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(initDeferredServices, { timeout: 1500 });
+    } else {
+      setTimeout(initDeferredServices, 300);
+    }
 
     const handleAutoUpdateSetting = (e: any) => {
       if (e?.detail?.enabled) {
@@ -206,17 +215,24 @@ const MainAppContent: React.FC = () => {
     };
     window.addEventListener('auto-update-setting-changed', handleAutoUpdateSetting);
 
-    if (user) {
-      notificationService.requestPermission();
-      oneSignalService.setUser(user);
-    } else {
-      oneSignalService.logout();
-    }
-
     return () => {
       window.removeEventListener('auto-update-setting-changed', handleAutoUpdateSetting);
     };
-  }, [user]);
+  }, []);
+
+  // 2. Session-Specific User Identity Sync (Fires ONLY when authenticated identity changes)
+  const userId = user?.id || user?.customId;
+  const userRole = user?.role;
+  useEffect(() => {
+    if (user && userId) {
+      notificationService.requestPermission();
+      oneSignalService.setUser(user);
+    } else if (!user) {
+      oneSignalService.logout();
+      notificationService.clearDeliveredKeys();
+      navigationHistoryManager.clearHistory();
+    }
+  }, [userId, userRole]);
 
   // Smoothly hide native Capacitor splash screen once initial load completes
   useEffect(() => {
@@ -255,7 +271,7 @@ const MainAppContent: React.FC = () => {
     } else {
       window.dispatchEvent(new CustomEvent('switch-portal-subtab', { detail: 'dashboard' }));
     }
-  }, [user]);
+  }, [user?.role]);
 
   // Layered Android Hardware Back Button Priority Stack
   useAndroidBackButton({
@@ -283,14 +299,17 @@ const MainAppContent: React.FC = () => {
     return () => navigationHistoryManager.removeModal('onboarding_modal');
   }, [isOnboardingOpen]);
 
+  // Memoized refresh callback to prevent re-subscribing native network event listeners
+  const handleRefreshPortalData = React.useCallback(() => {
+    window.dispatchEvent(new CustomEvent('refresh-portal-data'));
+  }, []);
+
   // Mobile Native Enhancements
   const { isOnline, showOfflineToast } =
     useMobileNativeEnhancements({
       onBackToOverview: handleBackToOverview,
       isSubTabActive: adminEditorTab !== 'overview' && adminEditorTab !== 'dashboard',
-      onRefreshData: () => {
-        window.dispatchEvent(new CustomEvent('refresh-portal-data'));
-      },
+      onRefreshData: handleRefreshPortalData,
     });
 
   // Sync currentTab to storage and scroll window to top instantly on tab change

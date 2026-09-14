@@ -187,11 +187,17 @@ class NotificationService {
 
     // 2. User-Specific Sound & Vibration Settings Check
     const userSettings = getUserNotificationSettings();
-    if (userSettings.sound && sound !== false) {
-      playNotificationSound();
-    }
-    if (userSettings.vibration) {
-      triggerHaptic('medium');
+    const isNativeAndroid = this.isNative();
+
+    // On native Android, LocalNotifications channel handles native sound and vibration.
+    // Suppress Web JS audio/haptics when on native device to prevent duplicate double-sounds.
+    if (!isNativeAndroid) {
+      if (userSettings.sound && sound !== false) {
+        playNotificationSound();
+      }
+      if (userSettings.vibration) {
+        triggerHaptic('medium');
+      }
     }
 
     // 3. Native Capacitor Local Notification (Android Heads-up & Lock Screen)

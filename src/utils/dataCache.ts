@@ -174,8 +174,8 @@ export function triggerFullAppRefresh(): void {
     // 2. Cross-tab real-time synchronization (single clean broadcast)
     if (typeof BroadcastChannel !== 'undefined') {
       try {
-        const bc = new BroadcastChannel('pirivena_realtime_channel');
-        bc.postMessage('refresh-portal-data');
+        const bc = new BroadcastChannel('pirivena-realtime-bus');
+        bc.postMessage({ type: 'db:change', event: { table: '*', action: 'refresh', timestamp: new Date().toISOString() } });
         bc.close();
       } catch (_) {}
     }

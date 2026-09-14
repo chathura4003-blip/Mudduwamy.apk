@@ -30,26 +30,28 @@ import { useTeacherPortalData } from '../hooks/useTeacherPortalData';
 import { navigationHistoryManager } from '../services/navigationHistoryManager';
 import { BarChart3, Activity, ClipboardList, BookOpen, Upload } from 'lucide-react';
 
-// Modular Tabs
+// Eager Overview Tab for Instant 0ms First-Paint
 import { OverviewTab } from './TeacherPortal/tabs/OverviewTab';
-import { MonitoringTab } from './TeacherPortal/tabs/MonitoringTab';
-import { RosterTab } from './TeacherPortal/tabs/RosterTab';
-import { ExamsTab } from './TeacherPortal/tabs/ExamsTab';
-import { MaterialsTab } from './TeacherPortal/tabs/MaterialsTab';
-import { SettingsTab } from './TeacherPortal/tabs/SettingsTab';
-import { TimetableTab } from './TeacherPortal/tabs/TimetableTab';
 
-// Modular Modals
-import { CreateExamModal } from './TeacherPortal/modals/CreateExamModal';
-import { SheetsPasteModal } from './TeacherPortal/modals/SheetsPasteModal';
-import { RawAiJsonModal } from './TeacherPortal/modals/RawAiJsonModal';
-import { UploadJsonModal } from './TeacherPortal/modals/UploadJsonModal';
-import { PrintablePaperModal } from './TeacherPortal/modals/PrintablePaperModal';
-import { ViewMaterialModal } from './TeacherPortal/modals/ViewMaterialModal';
-import { UploadMaterialModal } from './TeacherPortal/modals/UploadMaterialModal';
-import { SubmissionModal } from './TeacherPortal/modals/SubmissionModal';
-import { ClassReportModal } from './TeacherPortal/modals/ClassReportModal';
-import { StudentReportModal } from './TeacherPortal/modals/StudentReportModal';
+// Dynamic Lazy Loaders for Secondary Tabs
+const MonitoringTab = React.lazy(() => import('./TeacherPortal/tabs/MonitoringTab').then((m) => ({ default: m.MonitoringTab })));
+const RosterTab = React.lazy(() => import('./TeacherPortal/tabs/RosterTab').then((m) => ({ default: m.RosterTab })));
+const ExamsTab = React.lazy(() => import('./TeacherPortal/tabs/ExamsTab').then((m) => ({ default: m.ExamsTab })));
+const MaterialsTab = React.lazy(() => import('./TeacherPortal/tabs/MaterialsTab').then((m) => ({ default: m.MaterialsTab })));
+const SettingsTab = React.lazy(() => import('./TeacherPortal/tabs/SettingsTab').then((m) => ({ default: m.SettingsTab })));
+const TimetableTab = React.lazy(() => import('./TeacherPortal/tabs/TimetableTab').then((m) => ({ default: m.TimetableTab })));
+
+// Dynamic Lazy Loaders for Heavy Teacher Modals
+const CreateExamModal = React.lazy(() => import('./TeacherPortal/modals/CreateExamModal').then((m) => ({ default: m.CreateExamModal })));
+const SheetsPasteModal = React.lazy(() => import('./TeacherPortal/modals/SheetsPasteModal').then((m) => ({ default: m.SheetsPasteModal })));
+const RawAiJsonModal = React.lazy(() => import('./TeacherPortal/modals/RawAiJsonModal').then((m) => ({ default: m.RawAiJsonModal })));
+const UploadJsonModal = React.lazy(() => import('./TeacherPortal/modals/UploadJsonModal').then((m) => ({ default: m.UploadJsonModal })));
+const PrintablePaperModal = React.lazy(() => import('./TeacherPortal/modals/PrintablePaperModal').then((m) => ({ default: m.PrintablePaperModal })));
+const ViewMaterialModal = React.lazy(() => import('./TeacherPortal/modals/ViewMaterialModal').then((m) => ({ default: m.ViewMaterialModal })));
+const UploadMaterialModal = React.lazy(() => import('./TeacherPortal/modals/UploadMaterialModal').then((m) => ({ default: m.UploadMaterialModal })));
+const SubmissionModal = React.lazy(() => import('./TeacherPortal/modals/SubmissionModal').then((m) => ({ default: m.SubmissionModal })));
+const ClassReportModal = React.lazy(() => import('./TeacherPortal/modals/ClassReportModal').then((m) => ({ default: m.ClassReportModal })));
+const StudentReportModal = React.lazy(() => import('./TeacherPortal/modals/StudentReportModal').then((m) => ({ default: m.StudentReportModal })));
 
 interface TeacherPortalProps {
   onSelectStudentReportCard?: (user: User) => void;
@@ -1798,7 +1800,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
           key={activeTab}
           className="w-full space-y-4 sm:space-y-6 animate-fade-in-fast"
         >
-          {/* 1. OVERVIEW / PROFILE TAB */}
+          {/* 1. OVERVIEW / PROFILE TAB (Eagerly Rendered) */}
           {activeTab === 'overview' && (
             <OverviewTab
               user={user}
@@ -1816,119 +1818,123 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
             />
           )}
 
-          {/* 2. DEDICATED TIMETABLE TAB */}
-          {activeTab === 'timetable' && (
-            <TimetableTab
-              user={user}
-              classes={classes}
-              assignedClasses={assignedClasses}
-              assignedSubjects={assignedSubjects}
-              onNavigate={handleTabNavigate}
-            />
-          )}
+          {/* Secondary Sub-Tabs Lazy Loaded with Suspense Boundaries */}
+          <React.Suspense fallback={<PageLoadingSpinner message="අංශය පූරණය වෙමින් පවතී..." />}>
+            {/* 2. DEDICATED TIMETABLE TAB */}
+            {activeTab === 'timetable' && (
+              <TimetableTab
+                user={user}
+                classes={classes}
+                assignedClasses={assignedClasses}
+                assignedSubjects={assignedSubjects}
+                onNavigate={handleTabNavigate}
+              />
+            )}
 
-          {/* 2. EXAM MONITORING TAB */}
-          {activeTab === 'monitoring' && (
-            <MonitoringTab
-              teacherExams={teacherExams}
-              selectedExamId={selectedExamId}
-              setSelectedExamId={setSelectedExamId}
-              setShowClassReportModal={setShowClassReportModal}
-              fetchExamMonitoring={fetchExamMonitoring}
-              handleDeleteSelectedExam={handleDeleteSelectedExam}
-              monitoringData={monitoringData}
-              handleOpenSubmissionModal={handleOpenSubmissionModal}
-              setSelectedStudentReport={setSelectedStudentReport}
-            />
-          )}
+            {/* 3. EXAM MONITORING TAB */}
+            {activeTab === 'monitoring' && (
+              <MonitoringTab
+                teacherExams={teacherExams}
+                selectedExamId={selectedExamId}
+                setSelectedExamId={setSelectedExamId}
+                setShowClassReportModal={setShowClassReportModal}
+                fetchExamMonitoring={fetchExamMonitoring}
+                handleDeleteSelectedExam={handleDeleteSelectedExam}
+                monitoringData={monitoringData}
+                handleOpenSubmissionModal={handleOpenSubmissionModal}
+                setSelectedStudentReport={setSelectedStudentReport}
+              />
+            )}
 
-          {/* 3. ROSTER TAB */}
-          {activeTab === 'roster' && (
-            <RosterTab
-              rosterViewList={rosterViewList}
-              rosterSearch={rosterSearch}
-              setRosterSearch={setRosterSearch}
-              rosterClassFilter={rosterClassFilter}
-              setRosterClassFilter={setRosterClassFilter}
-              assignedClasses={assignedClasses}
-              assignedExams={assignedExams}
-              selectedExamId={selectedExamId}
-              setSelectedExamId={setSelectedExamId}
-              classes={classes}
-              handleOpenSubmissionModal={handleOpenSubmissionModal}
-              setSelectedStudentReport={setSelectedStudentReport}
-            />
-          )}
+            {/* 4. ROSTER TAB */}
+            {activeTab === 'roster' && (
+              <RosterTab
+                rosterViewList={rosterViewList}
+                rosterSearch={rosterSearch}
+                setRosterSearch={setRosterSearch}
+                rosterClassFilter={rosterClassFilter}
+                setRosterClassFilter={setRosterClassFilter}
+                assignedClasses={assignedClasses}
+                assignedExams={assignedExams}
+                selectedExamId={selectedExamId}
+                setSelectedExamId={setSelectedExamId}
+                classes={classes}
+                handleOpenSubmissionModal={handleOpenSubmissionModal}
+                setSelectedStudentReport={setSelectedStudentReport}
+              />
+            )}
 
-          {/* 4. EXAMS BUILDER TAB */}
-          {activeTab === 'exams' && (
-            <ExamsTab
-              assignedExams={assignedExams}
-              classes={classes}
-              subjects={subjects}
-              openCreateExamModal={openCreateExamModal}
-              handleTogglePublish={handleTogglePublish}
-              openEditExamModal={openEditExamModal}
-              handleDuplicateExam={handleDuplicateExam}
-              setPrintablePaper={setPrintablePaper}
-              setCustomPaperTitle={setCustomPaperTitle}
-              setCustomInstituteHeader={setCustomInstituteHeader}
-              setCustomInstituteEnglish={setCustomInstituteEnglish}
-              user={user}
-              deletingExamId={deletingExamId}
-              setDeletingExamId={setDeletingExamId}
-              handleDeleteExam={handleDeleteExam}
-              setSelectedExamId={setSelectedExamId}
-              setActiveTab={setActiveTab}
-            />
-          )}
+            {/* 5. EXAMS BUILDER TAB */}
+            {activeTab === 'exams' && (
+              <ExamsTab
+                assignedExams={assignedExams}
+                classes={classes}
+                subjects={subjects}
+                openCreateExamModal={openCreateExamModal}
+                handleTogglePublish={handleTogglePublish}
+                openEditExamModal={openEditExamModal}
+                handleDuplicateExam={handleDuplicateExam}
+                setPrintablePaper={setPrintablePaper}
+                setCustomPaperTitle={setCustomPaperTitle}
+                setCustomInstituteHeader={setCustomInstituteHeader}
+                setCustomInstituteEnglish={setCustomInstituteEnglish}
+                user={user}
+                deletingExamId={deletingExamId}
+                setDeletingExamId={setDeletingExamId}
+                handleDeleteExam={handleDeleteExam}
+                setSelectedExamId={setSelectedExamId}
+                setActiveTab={setActiveTab}
+              />
+            )}
 
-          {/* 5. STUDY MATERIALS TAB */}
-          {activeTab === 'materials' && (
-            <MaterialsTab
-              filteredMaterials={filteredMaterials}
-              matSearchQuery={matSearchQuery}
-              setMatSearchQuery={setMatSearchQuery}
-              matClassFilter={matClassFilter}
-              setMatClassFilter={setMatClassFilter}
-              matSubjectFilter={matSubjectFilter}
-              setMatSubjectFilter={setMatSubjectFilter}
-              matTypeFilter={matTypeFilter}
-              setMatTypeFilter={setMatTypeFilter}
-              assignedClasses={assignedClasses}
-              assignedSubjects={assignedSubjects}
-              getAssignedSubjectsForClass={getAssignedSubjectsForClass}
-              classes={classes}
-              subjects={subjects}
-              resetMaterialForm={resetMaterialForm}
-              matClassId={matClassId}
-              setMatClassId={setMatClassId}
-              matSubjectId={matSubjectId}
-              setMatSubjectId={setMatSubjectId}
-              setShowUploadModal={setShowUploadModal}
-              setViewingTeacherMaterial={setViewingTeacherMaterial}
-              handleEditMaterial={handleEditMaterial}
-              deletingMaterialId={deletingMaterialId}
-              setDeletingMaterialId={setDeletingMaterialId}
-              handleDeleteMaterial={handleDeleteMaterial}
-            />
-          )}
+            {/* 6. STUDY MATERIALS TAB */}
+            {activeTab === 'materials' && (
+              <MaterialsTab
+                filteredMaterials={filteredMaterials}
+                matSearchQuery={matSearchQuery}
+                setMatSearchQuery={setMatSearchQuery}
+                matClassFilter={matClassFilter}
+                setMatClassFilter={setMatClassFilter}
+                matSubjectFilter={matSubjectFilter}
+                setMatSubjectFilter={setMatSubjectFilter}
+                matTypeFilter={matTypeFilter}
+                setMatTypeFilter={setMatTypeFilter}
+                assignedClasses={assignedClasses}
+                assignedSubjects={assignedSubjects}
+                getAssignedSubjectsForClass={getAssignedSubjectsForClass}
+                classes={classes}
+                subjects={subjects}
+                resetMaterialForm={resetMaterialForm}
+                matClassId={matClassId}
+                setMatClassId={setMatClassId}
+                matSubjectId={matSubjectId}
+                setMatSubjectId={setMatSubjectId}
+                setShowUploadModal={setShowUploadModal}
+                setViewingTeacherMaterial={setViewingTeacherMaterial}
+                handleEditMaterial={handleEditMaterial}
+                deletingMaterialId={deletingMaterialId}
+                setDeletingMaterialId={setDeletingMaterialId}
+                handleDeleteMaterial={handleDeleteMaterial}
+              />
+            )}
 
-          {/* 6. SETTINGS & APP SPECIFICATIONS TAB */}
-          {activeTab === 'settings' && (
-            <SettingsTab
-              user={user}
-              assignedClasses={assignedClasses}
-              assignedSubjects={assignedSubjects}
-              onOpenTimetable={() => handleTabNavigate('timetable')}
-              onRefreshData={fetchInitialData}
-            />
-          )}
+            {/* 7. SETTINGS & APP SPECIFICATIONS TAB */}
+            {activeTab === 'settings' && (
+              <SettingsTab
+                user={user}
+                assignedClasses={assignedClasses}
+                assignedSubjects={assignedSubjects}
+                onOpenTimetable={() => handleTabNavigate('timetable')}
+                onRefreshData={fetchInitialData}
+              />
+            )}
+          </React.Suspense>
         </div>
 
       {/* ========================================================= */}
       {/*                   MODULAR MODAL DIALOGS                   */}
       {/* ========================================================= */}
+      <React.Suspense fallback={null}>
 
       {/* 1. Exam Creator Modal */}
       {showCreateExamModal && (
@@ -2166,6 +2172,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
           isLoading={confirmConfig.isLoading}
         />
       )}
+      </React.Suspense>
       </div>
     </PullToRefreshWrapper>
   );

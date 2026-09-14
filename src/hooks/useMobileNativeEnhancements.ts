@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { triggerHaptic } from '../utils/haptics';
 
 interface MobileEnhancementsOptions {
@@ -12,7 +12,7 @@ interface MobileEnhancementsOptions {
  * 
  * Background Native Device & Connection Enhancement Hook:
  * 1. Network Status (Online/Offline) detection with haptic alerts and auto-refresh.
- * 2. Virtual Keyboard Avoidance - smoothly scrolls focused input fields into center view.
+ * 2. Virtual Keyboard Avoidance - smoothly scrolls focused input fields into view ONLY when occluded.
  */
 export function useMobileNativeEnhancements({
   onRefreshData,
@@ -21,15 +21,17 @@ export function useMobileNativeEnhancements({
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [showOfflineToast, setShowOfflineToast] = useState(false);
+  const refreshCallbackRef = useRef(onRefreshData);
+  refreshCallbackRef.current = onRefreshData;
 
-  // 1. ONLINE / OFFLINE NETWORK STATUS LISTENER
+  // 1. ONLINE / OFFLINE NETWORK STATUS LISTENER (Single stable registration)
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setShowOfflineToast(false);
       triggerHaptic('light');
-      if (onRefreshData) {
-        onRefreshData();
+      if (refreshCallbackRef.current) {
+        refreshCallbackRef.current();
       }
     };
 
@@ -46,9 +48,9 @@ export function useMobileNativeEnhancements({
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [onRefreshData]);
+  }, []);
 
-  // 2. VIRTUAL KEYBOARD AUTO-SCROLL & VIEWPORT AVOIDANCE (Passive & Smooth)
+  // 2. VIRTUAL KEYBOARD AUTO-SCROLL & VIEWPORT AVOIDANCE (Passive & Non-Jank)
   useEffect(() => {
     let timer: any;
     const handleFocusIn = (e: FocusEvent) => {
@@ -65,11 +67,16 @@ export function useMobileNativeEnhancements({
         clearTimeout(timer);
         timer = setTimeout(() => {
           try {
-            target.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest',
-            });
+            const rect = target.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            // Only scroll if element is positioned in the lower 45% of the screen (keyboard occlusion risk)
+            if (rect.bottom > viewportHeight * 0.55 || rect.top < 60) {
+              target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest',
+              });
+            }
           } catch (err) {}
         }, 150);
       }
@@ -88,4 +95,5 @@ export function useMobileNativeEnhancements({
     setShowOfflineToast,
   };
 }
+
 

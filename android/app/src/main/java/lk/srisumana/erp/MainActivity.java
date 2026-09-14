@@ -145,11 +145,17 @@ public class MainActivity extends BridgeActivity {
                 if (cleanBase64.contains(",")) {
                     cleanBase64 = cleanBase64.split(",")[1];
                 }
+                // Memory Guard: Reject excessively large Base64 blobs (> 25MB)
+                if (cleanBase64.length() > 35 * 1024 * 1024) {
+                    Toast.makeText(context, "PDF ලේඛනය විශාල වැඩිය (PDF file too large)", Toast.LENGTH_LONG).show();
+                    return;
+                }
                 byte[] pdfBytes = Base64.decode(cleanBase64, Base64.DEFAULT);
 
-                String safeFileName = (fileName != null && !fileName.trim().isEmpty())
+                String rawName = (fileName != null && !fileName.trim().isEmpty())
                         ? fileName.trim()
                         : "document_" + System.currentTimeMillis() + ".pdf";
+                String safeFileName = rawName.replaceAll("[^a-zA-Z0-9._-]", "_");
                 if (!safeFileName.toLowerCase().endsWith(".pdf")) {
                     safeFileName += ".pdf";
                 }
@@ -158,6 +164,19 @@ public class MainActivity extends BridgeActivity {
                 if (!cacheDir.exists()) {
                     cacheDir.mkdirs();
                 }
+
+                // Automatic temporary PDF cache cleanup: remove files older than 24h
+                try {
+                    File[] existingPdfs = cacheDir.listFiles();
+                    if (existingPdfs != null && existingPdfs.length > 10) {
+                        long cutoff = System.currentTimeMillis() - (24 * 60 * 60 * 1000);
+                        for (File oldPdf : existingPdfs) {
+                            if (oldPdf.lastModified() < cutoff || existingPdfs.length > 20) {
+                                oldPdf.delete();
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
 
                 File pdfFile = new File(cacheDir, safeFileName);
                 try (FileOutputStream fos = new FileOutputStream(pdfFile)) {

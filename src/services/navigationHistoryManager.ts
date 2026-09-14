@@ -94,19 +94,9 @@ class NavigationHistoryManager {
     this.modalStack = this.modalStack.filter((m) => m.id !== id);
   }
 
-  // Check if any modal is currently registered or open in DOM
+  // Check if any modal is currently registered
   public hasOpenModals(): boolean {
-    if (this.exitModalOpen) return true;
-    if (this.modalStack.length > 0) return true;
-
-    if (typeof document !== 'undefined') {
-      const activeDomModals = document.querySelectorAll(
-        '[data-modal="true"], [role="dialog"], .fixed.inset-0.z-\\[99999\\], .fixed.inset-0.z-\\[999999\\], .fixed.inset-0.z-\\[100000\\], .fixed.inset-0.bg-black\\/80, .fixed.inset-0.bg-black\\/85, .fixed.inset-0.bg-black\\/90, .fixed.inset-0.bg-stone-950\\/80'
-      );
-      if (activeDomModals.length > 0) return true;
-    }
-
-    return false;
+    return this.exitModalOpen || this.modalStack.length > 0;
   }
 
   // Execute one step of hierarchical Back navigation
@@ -133,30 +123,7 @@ class NavigationHistoryManager {
       }
     }
 
-    // 3. Fallback: Close generic DOM modal via event & Escape key trigger
-    if (typeof document !== 'undefined') {
-      const activeDomModals = document.querySelectorAll(
-        '[data-modal="true"], [role="dialog"], .fixed.inset-0.z-\\[99999\\], .fixed.inset-0.z-\\[999999\\], .fixed.inset-0.z-\\[100000\\], .fixed.inset-0.bg-black\\/80, .fixed.inset-0.bg-black\\/85, .fixed.inset-0.bg-black\\/90, .fixed.inset-0.bg-stone-950\\/80'
-      );
-      if (activeDomModals.length > 0) {
-        window.dispatchEvent(new CustomEvent('close-active-modal'));
-        try {
-          const escEvent = new KeyboardEvent('keydown', {
-            key: 'Escape',
-            code: 'Escape',
-            keyCode: 27,
-            which: 27,
-            bubbles: true,
-            cancelable: true,
-          });
-          window.dispatchEvent(escEvent);
-          document.dispatchEvent(escEvent);
-        } catch (_) {}
-        return true;
-      }
-    }
-
-    // 4. Sub-tab History: Pop previous tab if available
+    // 3. Sub-tab History: Pop previous tab if available
     if (this.tabHistory.length > 0) {
       const prevTab = this.tabHistory.pop();
       if (prevTab && prevTab !== this.currentTab && prevTab !== 'overview' && prevTab !== 'dashboard') {

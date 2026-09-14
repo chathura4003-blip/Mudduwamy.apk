@@ -130,9 +130,10 @@ export async function apiClient<T = any>(
   const method = (options.method || 'GET').toUpperCase();
   const isGet = method === 'GET';
 
-  // Deduplicate identical simultaneous GET requests
+  // Deduplicate identical simultaneous GET requests with normalized key
   if (isGet) {
-    const dedupeKey = `${endpoint}`;
+    const bodyStr = options.body ? JSON.stringify(options.body) : '';
+    const dedupeKey = `GET:${endpoint}:${bodyStr}:${options.skipAuth ? 'noauth' : 'auth'}`;
     if (inFlightRequests.has(dedupeKey)) {
       return inFlightRequests.get(dedupeKey)!;
     }
@@ -252,7 +253,9 @@ async function executeRequest<T = any>(
   options: RequestOptions = {},
   retries = 2
 ): Promise<T> {
-  const { timeout = 45000, skipAuth = false, headers: customHeaders, body, credentials = 'same-origin', ...rest } = options;
+  const reqMethod = (options.method || 'GET').toUpperCase();
+  const defaultTimeout = reqMethod === 'GET' ? 15000 : 45000;
+  const { timeout = defaultTimeout, skipAuth = false, headers: customHeaders, body, credentials = 'same-origin', ...rest } = options;
 
   // Fast offline check before issuing fetch
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -344,10 +347,10 @@ async function executeRequest<T = any>(
         }
       } catch (e) {}
 
-      // Auto-retry server transient 502/503/504 errors strictly on idempotent GET requests
-      const reqMethod = (options.method || 'GET').toUpperCase();
+      // Auto-retry server transient 502/503/504 errors strictly on idempotent GET requests with backoff
       if (reqMethod === 'GET' && retries > 0 && (response.status === 502 || response.status === 503 || response.status === 504)) {
-        await new Promise((r) => setTimeout(r, 600));
+        const backoffMs = Math.max(400, (3 - retries) * 400);
+        await new Promise((r) => setTimeout(r, backoffMs));
         return executeRequest<T>(endpoint, options, retries - 1);
       }
 
