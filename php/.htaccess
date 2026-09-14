@@ -1,0 +1,24 @@
+# Prevent directory listings
+Options -Indexes
+
+# Deny access to sensitive files inside php directory
+<FilesMatch "\.(json|sql|log|env|ini|bak|sh|md)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Explicitly block Firebase service account JSON, environment files, and database scripts
+<FilesMatch "^(firebase-service-account\.json|config\.php|schema\.sql|db_diagnose\.php|\.env.*)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
