@@ -21,7 +21,7 @@ jobs:
           cache: 'npm'
 
       - name: Install Node Dependencies
-        run: npm ci || npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Web Application
         run: npm run build
@@ -33,20 +33,23 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Sync Capacitor Android
         run: npx cap sync android
 
       - name: Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
-      - name: Build Release APK
+      - name: Build Android APKs (Debug & Release)
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleDebug assembleRelease --no-daemon -x lint
 
-      - name: Upload Release APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: Sri-Sumana-Pirivena-ERP-Release-APK
-          path: android/app/build/outputs/apk/release/*.apk
+          name: Sri-Sumana-Pirivena-ERP-APKs
+          path: android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
