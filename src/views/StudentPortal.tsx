@@ -92,7 +92,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     try {
       sessionStorage.setItem('pirivena_student_tab', activePortalTab);
       localStorage.removeItem('pirivena_student_tab');
-    } catch (e) {}
+    } catch (e) { }
     navigationHistoryManager.recordTabNavigation(activePortalTab);
     if (typeof document !== 'undefined') {
       document.body.style.overflow = '';
@@ -410,7 +410,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
       try {
         const cached = localStorage.getItem(`pirivena_timetable_${studentClass.id}`);
         if (cached) rawTt = JSON.parse(cached);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (typeof rawTt === 'string') {
@@ -773,23 +773,19 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     lastNotifiedPeriodRef.current = currentPeriodNum;
     try {
       sessionStorage.setItem(sessionKey, 'true');
-    } catch (e) {}
+    } catch (e) { }
 
     const msg = isSi
-      ? `🔔 ${currentPeriodNum} වන කාලච්ඡේදය ආරම්භ විය: ${
-          activeOngoingPeriod.slot.subjectName || 'දේශනය'
-        }${
-          activeOngoingPeriod.slot.teacherName
-            ? ` (${activeOngoingPeriod.slot.teacherName})`
-            : ''
-        }`
-      : `🔔 Period ${currentPeriodNum} Started: ${
-          activeOngoingPeriod.slot.subjectName || 'Lecture'
-        }${
-          activeOngoingPeriod.slot.teacherName
-            ? ` (${activeOngoingPeriod.slot.teacherName})`
-            : ''
-        }`;
+      ? `🔔 ${currentPeriodNum} වන කාලච්ඡේදය ආරම්භ විය: ${activeOngoingPeriod.slot.subjectName || 'දේශනය'
+      }${activeOngoingPeriod.slot.teacherName
+        ? ` (${activeOngoingPeriod.slot.teacherName})`
+        : ''
+      }`
+      : `🔔 Period ${currentPeriodNum} Started: ${activeOngoingPeriod.slot.subjectName || 'Lecture'
+      }${activeOngoingPeriod.slot.teacherName
+        ? ` (${activeOngoingPeriod.slot.teacherName})`
+        : ''
+      }`;
 
     toast.info(msg);
 
@@ -808,7 +804,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
 
     try {
       localStorage.setItem('pirivena_student_period_notifications', nextState ? 'true' : 'false');
-    } catch (e) {}
+    } catch (e) { }
 
     if (nextState) {
       playNotificationSound();
@@ -830,7 +826,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     if (!dayKey) return false;
     const currentMins = getSriLankaMinutesOfDay();
     return currentMins >= 450 && currentMins <= 810;
-  }, [currentSecTick]);
+  }, [activeOngoingPeriod]);
 
   // Performance Metrics Calculation
   const studentPerformance = useMemo(() => {
@@ -954,7 +950,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
   const handlePullRefresh = async () => {
     try {
       await fetchData();
-    } catch (e) {}
+    } catch (e) { }
   };
 
   return (
@@ -977,7 +973,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
               libraryBooks={[]}
               studentPerformance={studentPerformance}
               isDashboardTimetableVisible={isDashboardTimetableVisible}
-              setIsDashboardTimetableVisible={() => {}}
+              setIsDashboardTimetableVisible={() => { }}
               currentLivePeriod={currentLivePeriod}
               activeOngoingPeriod={activeOngoingPeriod}
               upcomingNextPeriod={upcomingNextPeriod}
