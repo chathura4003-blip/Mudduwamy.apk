@@ -1,0 +1,7 @@
+# Sri Sumana Pirivena ERP - Android Keystore Configuration Template
+# DO NOT commit real release passwords to version control.
+# For local release builds, configure these in ~/.gradle/gradle.properties or set environment variables:
+# RELEASE_STORE_FILE=sri-sumana-release-key.jks
+# RELEASE_STORE_PASSWORD=your_keystore_password
+# RELEASE_KEY_ALIAS=srisumanakey
+# RELEASE_KEY_PASSWORD=your_key_password

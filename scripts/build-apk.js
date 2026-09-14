@@ -15,6 +15,24 @@ console.log('📦 [4/4] Compiling Android Release (Signed) and Debug APKs with G
 const androidDir = path.resolve('android');
 const gradlewCmd = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 
+// Load local environment variables if available
+const envPath = path.resolve('.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx > 0) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"]|['"]$/g, '');
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
+}
+
 try {
   // 1. Build Official Signed Release APK (for general distribution without Play Protect flags)
   console.log('\n🔐 Building Official Signed Release APK...');
