@@ -227,52 +227,62 @@ export function useStudentPortalData({
     return [];
   }, [subjects, studentClass, user]);
 
+  // 1. Precomputed Normalized Student Class Keys Set for O(1) matching
+  const studentClassKeySet = useMemo(() => {
+    if (!user) return new Set<string>();
+    const keys = [
+      user.classId,
+      (user as any).pirivenaClass,
+      studentClass?.id,
+      studentClass?.code,
+      studentClass?.name,
+      studentClass?.nameSinhala,
+      (studentClass as any)?.className,
+      (studentClass as any)?.classNameSinhala,
+    ]
+      .filter(Boolean)
+      .map((k) => String(k).trim().toLowerCase());
+    return new Set(keys);
+  }, [user?.classId, (user as any)?.pirivenaClass, studentClass]);
+
+  // 2. Precomputed Normalized Authorized Subject Keys Set for O(1) matching
+  const authorizedSubjectKeySet = useMemo(() => {
+    const keys: string[] = [];
+    for (const s of availableSubjects) {
+      if (s.id) keys.push(s.id.toLowerCase().trim());
+      if (s.code) keys.push(s.code.toLowerCase().trim());
+      if (s.name) keys.push(s.name.toLowerCase().trim());
+      if (s.nameSinhala) keys.push(s.nameSinhala.toLowerCase().trim());
+      if ((s as any).subjectName) keys.push(String((s as any).subjectName).toLowerCase().trim());
+      if ((s as any).subjectNameSinhala) keys.push(String((s as any).subjectNameSinhala).toLowerCase().trim());
+    }
+    return new Set(keys);
+  }, [availableSubjects]);
+
   // Verify session credentials & authorization for the requested classId & subjectId parameters
   const isAuthorized = useMemo(() => {
     if (!user) return false;
     if (user.role === 'admin' || user.role === 'superadmin') return true;
     if (user.role !== 'student') return false;
 
-    const stuClassId = String(user.classId || user.pirivenaClass || '').trim();
-
     // If a specific classId parameter is requested, ensure student belongs to it
     if (classId && classId !== 'all' && classId !== 'ALL') {
-      const targetClassKey = String(classId).trim();
-      const studentClassKeys = new Set(
-        [
-          stuClassId,
-          studentClass?.id,
-          studentClass?.code,
-          studentClass?.name,
-          studentClass?.nameSinhala,
-          (studentClass as any)?.className,
-          (studentClass as any)?.classNameSinhala,
-        ]
-          .filter(Boolean)
-          .map((k) => String(k).trim())
-      );
-      if (!studentClassKeys.has(targetClassKey)) {
+      const targetClassKey = String(classId).trim().toLowerCase();
+      if (!studentClassKeySet.has(targetClassKey)) {
         return false;
       }
     }
 
     // If a specific subjectId parameter is requested, ensure student is enrolled in it
     if (subjectId && subjectId !== 'all' && subjectId !== 'ALL') {
-      const targetSubjectKey = String(subjectId).trim();
-      const authorizedSubjectKeys = new Set(
-        availableSubjects.flatMap((s) =>
-          [s.id, s.code, s.name, s.nameSinhala, (s as any).subjectName, (s as any).subjectNameSinhala]
-            .filter(Boolean)
-            .map((k) => String(k).trim())
-        )
-      );
-      if (!authorizedSubjectKeys.has(targetSubjectKey)) {
+      const targetSubjectKey = String(subjectId).trim().toLowerCase();
+      if (!authorizedSubjectKeySet.has(targetSubjectKey)) {
         return false;
       }
     }
 
     return true;
-  }, [user, classId, subjectId, studentClass, availableSubjects]);
+  }, [user, classId, subjectId, studentClassKeySet, authorizedSubjectKeySet]);
 
   // Main data fetching routine: utilizes cached static metadata and fetches dynamic student data in parallel
   const fetchData = useCallback(async () => {
@@ -384,35 +394,11 @@ export function useStudentPortalData({
     };
   }, [fetchData, autoRefreshIntervalMs]);
 
-  // Filtered available exams strictly authorized for this student
+  // Filtered available exams strictly authorized for this student (O(1) Set lookups)
   const availableStudentExams = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin' || user.role === 'superadmin') return exams;
-
-    const studentClassKeys = new Set(
-      [
-        user?.classId,
-        user?.pirivenaClass,
-        studentClass?.id,
-        studentClass?.code,
-        studentClass?.name,
-        studentClass?.nameSinhala,
-        (studentClass as any)?.className,
-        (studentClass as any)?.classNameSinhala,
-      ]
-        .filter(Boolean)
-        .map((k) => String(k).trim().toLowerCase())
-    );
-
-    if (studentClassKeys.size === 0) return [];
-
-    const authorizedSubjectKeys = new Set(
-      availableSubjects.flatMap((s) =>
-        [s.id, s.code, s.name, s.nameSinhala, (s as any).subjectName, (s as any).subjectNameSinhala]
-          .filter(Boolean)
-          .map((k) => String(k).trim().toLowerCase())
-      )
-    );
+    if (studentClassKeySet.size === 0) return [];
 
     return exams.filter((e) => {
       const isPub =
@@ -426,63 +412,39 @@ export function useStudentPortalData({
 
       const rawClass = String(e.classId || (e as any).gradeClass || '').trim().toLowerCase();
       const isUniversalClass = !rawClass || rawClass === 'all' || rawClass === 'all classes' || rawClass === 'general' || rawClass.includes('සියලු');
-      const matchesClass = isUniversalClass || studentClassKeys.has(rawClass);
+      const matchesClass = isUniversalClass || studentClassKeySet.has(rawClass);
       if (!matchesClass) return false;
 
       const rawSubj = String(e.subjectId || (e as any).subject || '').trim().toLowerCase();
       const isUniversalSubj = !rawSubj || rawSubj === 'all' || rawSubj === 'all subjects' || rawSubj === 'general' || rawSubj.includes('සියලු');
-      const matchesSubject = isUniversalSubj || authorizedSubjectKeys.has(rawSubj);
+      const matchesSubject = isUniversalSubj || authorizedSubjectKeySet.has(rawSubj);
 
       return matchesSubject;
     });
-  }, [exams, user, studentClass, availableSubjects]);
+  }, [exams, user, studentClassKeySet, authorizedSubjectKeySet]);
 
-  // Filtered available study materials strictly authorized for this student
+  // Filtered available study materials strictly authorized for this student (O(1) Set lookups)
   const availableStudentMaterials = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin' || user.role === 'superadmin') return materials;
-
-    const studentClassKeys = new Set(
-      [
-        user?.classId,
-        user?.pirivenaClass,
-        studentClass?.id,
-        studentClass?.code,
-        studentClass?.name,
-        studentClass?.nameSinhala,
-        (studentClass as any)?.className,
-        (studentClass as any)?.classNameSinhala,
-      ]
-        .filter(Boolean)
-        .map((k) => String(k).trim().toLowerCase())
-    );
-
-    if (studentClassKeys.size === 0) return [];
-
-    const authorizedSubjectKeys = new Set(
-      availableSubjects.flatMap((s) =>
-        [s.id, s.code, s.name, s.nameSinhala, (s as any).subjectName, (s as any).subjectNameSinhala]
-          .filter(Boolean)
-          .map((k) => String(k).trim().toLowerCase())
-      )
-    );
+    if (studentClassKeySet.size === 0) return [];
 
     return materials.filter((m) => {
       const mClass = String(m.classId || '').trim().toLowerCase();
       const isUniversal = !mClass || mClass === 'all' || mClass === 'all classes' || mClass.includes('සියලු');
-      if (!isUniversal && !studentClassKeys.has(mClass)) {
+      if (!isUniversal && !studentClassKeySet.has(mClass)) {
         return false;
       }
 
       const mSubj = String(m.subjectId || '').trim().toLowerCase();
       const isUniversalSubj = !mSubj || mSubj === 'all' || mSubj === 'all subjects' || mSubj.includes('සියලු');
-      if (!isUniversalSubj && !authorizedSubjectKeys.has(mSubj)) {
+      if (!isUniversalSubj && !authorizedSubjectKeySet.has(mSubj)) {
         return false;
       }
 
       return true;
     });
-  }, [materials, user, studentClass, availableSubjects]);
+  }, [materials, user, studentClassKeySet, authorizedSubjectKeySet]);
 
   // Dedicated setters updating the consolidated state atomically
   const setExams = useCallback<React.Dispatch<React.SetStateAction<Exam[]>>>((action) => {

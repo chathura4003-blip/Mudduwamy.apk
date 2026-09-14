@@ -142,6 +142,30 @@ export function useTeacherPortalData({
     );
   }, [subjects, user, teacherAssignments]);
 
+  // Precomputed Teacher Identity Keys Set for O(1) creator matching
+  const teacherKeysSet = useMemo(() => {
+    if (!user) return new Set<string>();
+    return new Set(
+      [user.id, user.customId, user.name, user.monkName, user.email]
+        .filter(Boolean)
+        .map((k) => String(k).trim().toLowerCase())
+    );
+  }, [user?.id, user?.customId, user?.name, user?.monkName, user?.email]);
+
+  // Precomputed Assigned Class Keys Set for O(1) class matching
+  const assignedClassKeysSet = useMemo(() => {
+    const keys: string[] = [];
+    for (const c of assignedClasses) {
+      if (c.id) keys.push(c.id.toLowerCase().trim());
+      if (c.code) keys.push(c.code.toLowerCase().trim());
+      if (c.name) keys.push(c.name.toLowerCase().trim());
+      if (c.nameSinhala) keys.push(c.nameSinhala.toLowerCase().trim());
+      if ((c as any).className) keys.push(String((c as any).className).toLowerCase().trim());
+      if ((c as any).classNameSinhala) keys.push(String((c as any).classNameSinhala).toLowerCase().trim());
+    }
+    return new Set(keys);
+  }, [assignedClasses]);
+
   // Helper to get subjects specifically assigned to teacher for a given class ID (tuple: classId -> subjectId)
   const getAssignedSubjectsForClass = useCallback(
     (selectedClassId?: string): Subject[] => {
@@ -226,7 +250,6 @@ export function useTeacherPortalData({
     setPortalState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // Determine query scope for API calls
       const effectiveClassId = classId && classId !== 'all' ? classId : undefined;
       const effectiveSubjectId = subjectId && subjectId !== 'all' ? subjectId : undefined;
 
@@ -237,7 +260,6 @@ export function useTeacherPortalData({
       } else if (user.role === 'admin' || user.role === 'superadmin') {
         studentsPromise = fetchScopedStudents(undefined);
       } else if (teacherAssignments.length > 0) {
-        // Teacher assignments: fetch students for teacher's first assigned class or unique assigned classes
         const assignedClassIds = Array.from(
           new Set(teacherAssignments.map((a) => String(a.classId || '').trim()).filter(Boolean))
         );
@@ -351,68 +373,41 @@ export function useTeacherPortalData({
     };
   }, [fetchData, autoRefreshIntervalMs]);
 
-  // Filtered assigned students — students strictly belonging to teacher's assigned classes from teacher_assignments
+  // Filtered assigned students — students strictly belonging to teacher's assigned classes (O(1) Set lookup)
   const assignedStudents = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin' || user.role === 'superadmin') return students;
-
-    if (assignedClasses.length === 0) {
-      return [];
-    }
-
-    const assignedClassKeys = new Set(
-      assignedClasses.flatMap((c) =>
-        [c.id, c.code, c.name, c.nameSinhala, (c as any).className, (c as any).classNameSinhala]
-          .filter(Boolean)
-          .map((k) => String(k).trim().toLowerCase())
-      )
-    );
+    if (assignedClassKeysSet.size === 0) return [];
 
     return students.filter((s) => {
       const sClass = String(s.classId || s.pirivenaClass || (s as any).className || '').trim().toLowerCase();
-      return Boolean(sClass && assignedClassKeys.has(sClass));
+      return Boolean(sClass && assignedClassKeysSet.has(sClass));
     });
-  }, [students, assignedClasses, user]);
+  }, [students, assignedClassKeysSet, user]);
 
-  // Filtered assigned exams — STRICT TEACHER ISOLATION:
-  // Admins & superadmins can view all exams.
-  // For teachers: each teacher ONLY sees exams they created (prevents co-teachers from seeing or modifying each other's exams).
+  // Filtered assigned exams — STRICT TEACHER ISOLATION with O(1) Set lookup
   const assignedExams = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin' || user.role === 'superadmin') return exams;
 
-    const teacherKeys = new Set(
-      [user.id, user.customId, user.name, user.monkName, user.email]
-        .filter(Boolean)
-        .map((k) => String(k).trim().toLowerCase())
-    );
-
     return exams.filter((e) => {
       const eTeacher = String(e.teacherId || (e as any).createdBy || (e as any).uploadedByTeacherId || '').trim().toLowerCase();
-      return Boolean(eTeacher && teacherKeys.has(eTeacher));
+      return Boolean(eTeacher && teacherKeysSet.has(eTeacher));
     });
-  }, [exams, user]);
+  }, [exams, user, teacherKeysSet]);
 
-  // Filtered assigned study materials — STRICT TEACHER ISOLATION:
-  // Admins & superadmins can view all materials.
-  // For teachers: each teacher ONLY sees materials they uploaded (prevents co-teachers from seeing or modifying each other's materials).
+  // Filtered assigned study materials — STRICT TEACHER ISOLATION with O(1) Set lookup
   const assignedMaterials = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin' || user.role === 'superadmin') return materials;
-
-    const teacherKeys = new Set(
-      [user.id, user.customId, user.name, user.monkName, user.email]
-        .filter(Boolean)
-        .map((k) => String(k).trim().toLowerCase())
-    );
 
     return materials.filter((m) => {
       const uploaderId = String(
         m.uploadedByTeacherId || (m as any).uploadedBy || (m as any).uploaderId || (m as any).teacherId || (m as any).createdBy || ''
       ).trim().toLowerCase();
-      return Boolean(uploaderId && teacherKeys.has(uploaderId));
+      return Boolean(uploaderId && teacherKeysSet.has(uploaderId));
     });
-  }, [materials, user]);
+  }, [materials, user, teacherKeysSet]);
 
   // Dedicated atomic setters
   const setExams = useCallback<React.Dispatch<React.SetStateAction<Exam[]>>>((action) => {
