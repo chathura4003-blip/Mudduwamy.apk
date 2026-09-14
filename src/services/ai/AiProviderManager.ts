@@ -17,6 +17,7 @@ import type {
 import { GeminiProvider } from './GeminiProvider';
 import { OpenRouterProvider } from './OpenRouterProvider';
 import { extractCleanErrorMessage } from './utils';
+import { apiClient } from '../../api/apiClient';
 
 export function getApiKeys(overrideGeminiKey?: string, overrideOpenRouterKey?: string) {
   const settings = getSiteSettingsFromDb() || {};
@@ -210,11 +211,34 @@ export class AiProviderManager {
       }
     }
 
+    // 🛡️ Security Guard: Fallback to secure server-side AI proxy (/api/ai/chat)
+    try {
+      console.info('[AI Provider Manager] Requesting AI completion via secure Backend Proxy (/api/ai/chat)...');
+      const response = await apiClient.post<any>('/api/ai/chat', {
+        prompt: options.prompt,
+        systemInstruction: options.systemInstruction,
+        temperature: options.temperature,
+        action: 'chat',
+      });
+      if (response && (response.text || response.reply || response.content || response.data)) {
+        const text = response.text || response.reply || response.content || (typeof response.data === 'string' ? response.data : JSON.stringify(response.data));
+        return {
+          text,
+          provider: (response.provider || 'gemini') as any,
+          model: response.model || 'backend-managed',
+        };
+      }
+    } catch (backendErr: any) {
+      const bMsg = extractCleanErrorMessage(backendErr);
+      errors['BACKEND_PROXY'] = bMsg;
+      console.warn(`[AI Provider Manager] Backend proxy failed: ${bMsg}`);
+    }
+
     // Throw comprehensive diagnostic error if all attempted providers failed
     const diagnosticMessage = [
-      `AI Service Error (Tried: ${providersToTry.map((p) => p.toUpperCase()).join(', ')}):`,
+      `AI Service Error (Tried: ${providersToTry.map((p) => p.toUpperCase()).join(', ')}, BACKEND_PROXY):`,
       ...Object.entries(errors).map(([p, err]) => `• ${p.toUpperCase()}: ${err}`),
-      `Action: Please check your API keys in Admin Panel -> Admin Settings.`,
+      `Action: Please ensure backend AI keys are configured in backend environment or site_settings.`,
     ].join('\n');
 
     throw new Error(diagnosticMessage);

@@ -17,8 +17,6 @@ export default defineConfig(({ mode }) => {
     base: basePath,
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY || ''),
-      'process.env.OPENROUTER_API_KEY': JSON.stringify(env.VITE_OPENROUTER_API_KEY || env.OPENROUTER_API_KEY || ''),
       'process.env.GEMINI_MODEL': JSON.stringify(env.VITE_GEMINI_MODEL || env.GEMINI_MODEL || 'gemini-2.5-flash'),
       'process.env.OPENROUTER_MODEL': JSON.stringify(env.VITE_OPENROUTER_MODEL || env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001'),
       'process.env.PRIMARY_PROVIDER': JSON.stringify(env.VITE_PRIMARY_PROVIDER || env.PRIMARY_PROVIDER || 'gemini'),

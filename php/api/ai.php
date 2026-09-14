@@ -36,6 +36,39 @@ if ($method !== 'POST' && php_sapi_name() !== 'cli') {
 // 🛡️ Security Guard: Require authenticated user session for AI processing
 if (php_sapi_name() !== 'cli') {
     $authUser = requireAuth();
+    
+    // 🛡️ Rate Limiting: Max 30 requests per minute per user/IP
+    $clientIdentifier = !empty($authUser['id']) ? 'user_' . $authUser['id'] : 'ip_' . ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
+    try {
+        $db->exec("CREATE TABLE IF NOT EXISTS ai_rate_limits (
+            client_key VARCHAR(64) NOT NULL,
+            requests_count INT NOT NULL DEFAULT 1,
+            window_start DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (client_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $rlStmt = $db->prepare("SELECT requests_count, window_start FROM ai_rate_limits WHERE client_key = :k LIMIT 1");
+        $rlStmt->execute(['k' => $clientIdentifier]);
+        $rl = $rlStmt->fetch(PDO::FETCH_ASSOC);
+
+        $now = time();
+        if ($rl) {
+            $windowStart = strtotime($rl['window_start']);
+            if ($now - $windowStart < 60) {
+                if ($rl['requests_count'] >= 30) {
+                    sendJsonResponse([
+                        "error" => "AI සේවාව සඳහා අධික ඉල්ලීම් ප්‍රමාණයක් ලැබී ඇත. කරුණාකර විනාඩියකින් නැවත උත්සාහ කරන්න. (AI rate limit exceeded. Please wait 1 minute.)",
+                        "code" => "RATE_LIMITED"
+                    ], 429);
+                }
+                $db->prepare("UPDATE ai_rate_limits SET requests_count = requests_count + 1 WHERE client_key = :k")->execute(['k' => $clientIdentifier]);
+            } else {
+                $db->prepare("UPDATE ai_rate_limits SET requests_count = 1, window_start = NOW() WHERE client_key = :k")->execute(['k' => $clientIdentifier]);
+            }
+        } else {
+            $db->prepare("INSERT INTO ai_rate_limits (client_key, requests_count, window_start) VALUES (:k, 1, NOW())")->execute(['k' => $clientIdentifier]);
+        }
+    } catch (Exception $eRate) {}
 }
 
 $body = getRequestBody();
