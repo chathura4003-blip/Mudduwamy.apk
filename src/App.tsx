@@ -201,11 +201,14 @@ const MainAppContent: React.FC = () => {
       });
     };
 
+    let idleId: any = null;
+    let timeoutId: any = null;
+
     // Defer non-critical background services slightly so initial frame paints immediately (0ms)
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(initDeferredServices, { timeout: 1500 });
+      idleId = (window as any).requestIdleCallback(initDeferredServices, { timeout: 1500 });
     } else {
-      setTimeout(initDeferredServices, 300);
+      timeoutId = setTimeout(initDeferredServices, 300);
     }
 
     const handleAutoUpdateSetting = (e: any) => {
@@ -216,6 +219,14 @@ const MainAppContent: React.FC = () => {
     window.addEventListener('auto-update-setting-changed', handleAutoUpdateSetting);
 
     return () => {
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        try {
+          (window as any).cancelIdleCallback(idleId);
+        } catch (_) {}
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
       window.removeEventListener('auto-update-setting-changed', handleAutoUpdateSetting);
     };
   }, []);

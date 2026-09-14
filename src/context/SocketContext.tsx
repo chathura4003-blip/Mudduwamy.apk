@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useCallback } from 'react';
 
 export interface DbChangeEvent {
+  eventId?: string;
+  originId?: string;
   table: string;
   action: 'create' | 'update' | 'delete' | 'reset' | string;
   id?: string;
@@ -41,19 +43,42 @@ const SocketContext = createContext<SocketContextType>({
 
 export const useSocket = () => useContext(SocketContext);
 
+// Unique session/window origin token to prevent processing self-echoed broadcast messages
+const SESSION_ORIGIN_ID = typeof window !== 'undefined'
+  ? `tab-${Math.random().toString(36).substring(2, 9)}-${Date.now()}`
+  : 'server';
+
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(true);
   const [lastDbChange, setLastDbChange] = useState<DbChangeEvent | null>(null);
   const [lastActivity, setLastActivity] = useState<ActivityEvent | null>(null);
   const listenersRef = useRef<Map<string, Set<(change: DbChangeEvent) => void>>>(new Map());
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const processedEventIdsRef = useRef<Set<string>>(new Set());
 
-  const handleIncomingDbChange = useCallback((event: DbChangeEvent) => {
-    setLastDbChange(event);
-
+  const handleIncomingDbChange = useCallback((event: DbChangeEvent, fromRemote: boolean = false) => {
     if (!event || !event.table) return;
 
-    // 1. Notify direct programmatic table subscribers
+    // 1. Echo Loop Prevention: Ignore remote messages originally created by THIS tab instance
+    if (fromRemote && event.originId && event.originId === SESSION_ORIGIN_ID) {
+      return;
+    }
+
+    // 2. Deduplication Guard: Process each unique event ID at most once
+    if (event.eventId) {
+      if (processedEventIdsRef.current.has(event.eventId)) {
+        return;
+      }
+      if (processedEventIdsRef.current.size > 200) {
+        const first = processedEventIdsRef.current.values().next().value;
+        if (first) processedEventIdsRef.current.delete(first);
+      }
+      processedEventIdsRef.current.add(event.eventId);
+    }
+
+    setLastDbChange(event);
+
+    // 3. Notify direct programmatic table subscribers
     const tableListeners = listenersRef.current.get(event.table);
     if (tableListeners) {
       tableListeners.forEach((cb) => {
@@ -76,7 +101,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       });
     }
 
-    // 2. Targeted Domain-Specific Event Dispatching (Eliminates blanket refresh storms)
+    // 4. Targeted Domain-Specific Event Dispatching (Eliminates blanket refresh storms)
     if (event.table === '*' || event.table === 'all') {
       window.dispatchEvent(new CustomEvent('database-changed', { detail: event }));
       window.dispatchEvent(new CustomEvent('refresh-portal-data'));
@@ -114,7 +139,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         channel.onmessage = (msgEvent) => {
           const payload = msgEvent.data;
           if (payload?.type === 'db:change' && payload.event) {
-            handleIncomingDbChange(payload.event);
+            handleIncomingDbChange(payload.event, true);
           } else if (payload?.type === 'activity:new' && payload.activity) {
             setLastActivity(payload.activity);
             window.dispatchEvent(new CustomEvent('activity-stream-event', { detail: payload.activity }));
@@ -128,7 +153,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const handleLocalDbChange = (e: Event) => {
       const detail = (e as CustomEvent)?.detail;
       if (detail) {
-        handleIncomingDbChange(detail);
+        handleIncomingDbChange(detail, false);
       }
     };
 
@@ -161,7 +186,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   const broadcastDbChange = useCallback((table: string, action: string, data?: any, id?: string) => {
+    const eventId = `evt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const event: DbChangeEvent = {
+      eventId,
+      originId: SESSION_ORIGIN_ID,
       table,
       action,
       data,
@@ -169,8 +197,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       timestamp: new Date().toISOString(),
     };
 
-    handleIncomingDbChange(event);
+    // 1. Process locally in current window
+    handleIncomingDbChange(event, false);
 
+    // 2. Broadcast to other open tabs with origin ID to prevent echo processing
     if (channelRef.current) {
       try {
         channelRef.current.postMessage({ type: 'db:change', event });
