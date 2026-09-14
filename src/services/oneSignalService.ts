@@ -106,9 +106,27 @@ class OneSignalService {
     }
   }
 
+  public isNativeEnvironment(): boolean {
+    if (typeof window === 'undefined') return false;
+    return Boolean(
+      (window as any).Capacitor?.isNativePlatform?.() ||
+      (window as any).cordova ||
+      (window as any).plugins?.OneSignal ||
+      window.location.protocol === 'capacitor:' ||
+      window.location.protocol === 'file:' ||
+      navigator.userAgent.includes('wv') ||
+      navigator.userAgent.includes('Capacitor')
+    );
+  }
+
   private setupWebOneSignal() {
     try {
       if (typeof window === 'undefined') return;
+
+      // Strictly never load Web SDK inside native Android APK
+      if (this.isNativeEnvironment()) {
+        return;
+      }
 
       // Only attempt Web push on secure origins with serviceWorker & Notification support
       const isPushCapable =

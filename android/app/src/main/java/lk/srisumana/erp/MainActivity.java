@@ -35,10 +35,6 @@ public class MainActivity extends BridgeActivity {
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
                 settings.setAllowFileAccess(true);
                 settings.setAllowContentAccess(true);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    settings.setOffscreenPreRaster(true);
-                }
-                webView.setLayerType(WebView.LAYER_TYPE_HARDWARE, null);
                 webView.setOverScrollMode(WebView.OVER_SCROLL_IF_CONTENT_SCROLLS);
                 webView.setScrollBarStyle(WebView.SCROLLBARS_INSIDE_OVERLAY);
 

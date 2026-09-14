@@ -51,50 +51,56 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const handleIncomingDbChange = useCallback((event: DbChangeEvent) => {
     setLastDbChange(event);
 
-    if (event && event.table) {
-      const tableListeners = listenersRef.current.get(event.table);
-      if (tableListeners) {
-        tableListeners.forEach((cb) => {
-          try {
-            cb(event);
-          } catch (err) {
-            console.error('Error in table listener:', err);
-          }
-        });
-      }
+    if (!event || !event.table) return;
 
-      const allListeners = listenersRef.current.get('*');
-      if (allListeners) {
-        allListeners.forEach((cb) => {
-          try {
-            cb(event);
-          } catch (err) {
-            console.error('Error in all-tables listener:', err);
-          }
-        });
-      }
+    // 1. Notify direct programmatic table subscribers
+    const tableListeners = listenersRef.current.get(event.table);
+    if (tableListeners) {
+      tableListeners.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (err) {
+          console.error('Error in table listener:', err);
+        }
+      });
+    }
 
+    const allListeners = listenersRef.current.get('*');
+    if (allListeners) {
+      allListeners.forEach((cb) => {
+        try {
+          cb(event);
+        } catch (err) {
+          console.error('Error in all-tables listener:', err);
+        }
+      });
+    }
+
+    // 2. Targeted Domain-Specific Event Dispatching (Eliminates blanket refresh storms)
+    if (event.table === '*' || event.table === 'all') {
       window.dispatchEvent(new CustomEvent('database-changed', { detail: event }));
-      window.dispatchEvent(new CustomEvent('site-data-updated', { detail: event }));
+      window.dispatchEvent(new CustomEvent('refresh-portal-data'));
+    } else {
+      window.dispatchEvent(new CustomEvent(`db-table:${event.table}`, { detail: event }));
+    }
 
-      if (['users', 'teachers', 'students'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('users-data-updated', { detail: event }));
-      }
-      if (['classes', 'subjects'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('curriculum-updated', { detail: event }));
-      }
-      if (['exams', 'submissions'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('exams-updated', { detail: event }));
-      }
-      if (['materials', 'study_materials'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('materials-updated', { detail: event }));
-      }
-      if (['notices', 'broadcast_notices'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('notices-updated', { detail: event }));
-      }
-      if (['admissions'].includes(event.table)) {
-        window.dispatchEvent(new CustomEvent('admissions-updated', { detail: event }));
-      }
+    if (['users', 'teachers', 'students'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('users-data-updated', { detail: event }));
+      window.dispatchEvent(new CustomEvent('pirivena-users-updated', { detail: event }));
+    } else if (['classes', 'subjects'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('curriculum-updated', { detail: event }));
+      if (event.table === 'classes') window.dispatchEvent(new CustomEvent('pirivena-classes-updated', { detail: event }));
+      if (event.table === 'subjects') window.dispatchEvent(new CustomEvent('pirivena-subjects-updated', { detail: event }));
+    } else if (['exams', 'submissions'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('exams-updated', { detail: event }));
+    } else if (['materials', 'study_materials'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('materials-updated', { detail: event }));
+    } else if (['notices', 'broadcast_notices'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('notices-updated', { detail: event }));
+    } else if (['admissions'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('admissions-updated', { detail: event }));
+    } else if (['settings', 'site_settings', 'news', 'events', 'gallery', 'donations'].includes(event.table)) {
+      window.dispatchEvent(new CustomEvent('site-data-updated', { detail: event }));
     }
   }, []);
 

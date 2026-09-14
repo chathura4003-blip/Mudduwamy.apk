@@ -583,15 +583,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, []);
 
   useEffect(() => {
+    // Only fetch and poll active sessions when the admin is explicitly on the Audit/Security tab
+    const isSecurityActive = activeTab === 'audit' || activeTab === 'security';
+    if (!isSecurityActive) return;
+
     fetchActiveSessions();
-    // 🔄 Auto-sync active sessions gently (30s) only when tab is active
+    // 🔄 Auto-sync active sessions gently (30s) only when security tab is active
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchActiveSessions();
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [fetchActiveSessions]);
+  }, [activeTab, fetchActiveSessions]);
 
   const handleRevokeSingleSession = async (sessionId: string, userName: string) => {
     try {

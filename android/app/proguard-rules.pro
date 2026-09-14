@@ -1,21 +1,29 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard & R8 Configuration for Sri Sumana Maha Pirivena ERP
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# 1. Preserve JavaScript Interfaces for Android Native Bridge
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-keep class lk.srisumana.erp.MainActivity$* { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# 2. Preserve Capacitor Core & Cordova Plugins
+-keep class com.getcapacitor.** { *; }
+-dontwarn com.getcapacitor.**
+-keep class org.apache.cordova.** { *; }
+-dontwarn org.apache.cordova.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# 3. Preserve OneSignal & Google Play Services
+-keep class com.onesignal.** { *; }
+-dontwarn com.onesignal.**
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# 4. Preserve Capgo LiveUpdater & Preferences Plugins
+-keep class com.capgo.** { *; }
+-dontwarn com.capgo.**
+
+# 5. Preserve AndroidX FileProvider & Core Components
+-keep class androidx.core.content.FileProvider { *; }
+-keepattributes *Annotation*,JavascriptInterface,EnclosingMethod,InnerClasses,Signature
+-dontwarn androidx.**
+
