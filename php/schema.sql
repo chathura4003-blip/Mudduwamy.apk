@@ -6,30 +6,8 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. DROP EXISTING TABLES
-DROP TABLE IF EXISTS `admissions`;
-DROP TABLE IF EXISTS `audit_logs`;
-DROP TABLE IF EXISTS `broadcast_notices`;
-DROP TABLE IF EXISTS `circular_downloads`;
-DROP TABLE IF EXISTS `classes`;
-DROP TABLE IF EXISTS `custom_categories`;
-DROP TABLE IF EXISTS `donations`;
-DROP TABLE IF EXISTS `events`;
-DROP TABLE IF EXISTS `exam_submissions`;
-DROP TABLE IF EXISTS `exams`;
-DROP TABLE IF EXISTS `gallery`;
-DROP TABLE IF EXISTS `library`;
-DROP TABLE IF EXISTS `news`;
-DROP TABLE IF EXISTS `site_settings`;
-DROP TABLE IF EXISTS `student_subjects`;
-DROP TABLE IF EXISTS `students`;
-DROP TABLE IF EXISTS `study_materials`;
-DROP TABLE IF EXISTS `subjects`;
-DROP TABLE IF EXISTS `teacher_assignments`;
-DROP TABLE IF EXISTS `teachers`;
-DROP TABLE IF EXISTS `users`;
-
--- 2. CREATE TABLE DEFINITIONS
+-- 1. NON-DESTRUCTIVE SAFE SCHEMA
+-- Drops removed to prevent accidental data loss in production environments
 
 -- Admissions Table
 CREATE TABLE `admissions` (

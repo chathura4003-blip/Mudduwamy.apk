@@ -103,24 +103,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 @file_put_contents(__DIR__ . '/.env', $newEnv);
             }
 
-            // 3. Import schema.sql if requested or if tables missing
+            // 3. Run Structured Non-Destructive Migrations if requested or if tables missing
             $stmt = $pdo->query("SHOW TABLES");
             $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
             $imported = false;
+            $migSummary = '';
             if (isset($_POST['import_schema']) || count($tables) < 5) {
-                if (file_exists($schemaPath)) {
-                    $sqlContent = file_get_contents($schemaPath);
-                    $pdo->exec($sqlContent);
-                    $imported = true;
-                    // Refresh tables list
-                    $stmt = $pdo->query("SHOW TABLES");
-                    $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                require_once __DIR__ . '/migrations/MigrationRunner.php';
+                $runner = new MigrationRunner($pdo, __DIR__ . '/migrations');
+                $migResult = $runner->runPending();
+                $imported = !empty($migResult['applied']);
+                if ($imported) {
+                    $migSummary = " (" . count($migResult['applied']) . " Migrations සාර්ථකව ක්‍රියාත්මක විය)";
                 }
+
+                // Refresh tables list
+                $stmt = $pdo->query("SHOW TABLES");
+                $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
             }
 
             $tableCount = count($tables);
-            $statusMsg = "✅ සාර්ථකයි! Database සම්බන්ධතාවය තහවුරු විය. Tables සංඛ්‍යාව: {$tableCount}." . ($imported ? " (Schema.sql සාර්ථකව Import කරන ලදී)" : "");
+            $statusMsg = "✅ සාර්ථකයි! Database සම්බන්ධතාවය තහවුරු විය. Tables සංඛ්‍යාව: {$tableCount}." . $migSummary;
             $statusType = "success";
             $installed = true;
 
