@@ -35,18 +35,75 @@ ini_set('display_startup_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../php-errors.log');
 
-// CORS Headers Setup
+// 🛡️ Security Guard: Explicit CORS & HTTP Security Headers Setup
 if (!headers_sent()) {
-    header("Access-Control-Allow-Origin: *");
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowedOrigins = [
+        'capacitor://localhost',
+        'http://localhost',
+        'https://localhost',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:8000',
+        'http://localhost:8080',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173',
+        'https://srisumana.lk',
+        'https://www.srisumana.lk',
+        'https://srisumanamahapiriwena-lk.us.stackstaging.com'
+    ];
+
+    // Also support custom APP_URL or CORS_ALLOWED_ORIGINS from environment
+    if (!empty($_ENV['APP_URL'])) {
+        $allowedOrigins[] = rtrim($_ENV['APP_URL'], '/');
+    }
+    if (!empty($_ENV['CORS_ALLOWED_ORIGINS'])) {
+        $extra = explode(',', $_ENV['CORS_ALLOWED_ORIGINS']);
+        foreach ($extra as $ex) {
+            $t = trim($ex);
+            if (!empty($t)) $allowedOrigins[] = $t;
+        }
+    }
+
+    if (!empty($origin)) {
+        $matched = false;
+        if (in_array($origin, $allowedOrigins, true)) {
+            $matched = true;
+        } elseif (preg_match('/^https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/', $origin)) {
+            $matched = true;
+        } elseif (preg_match('/^https?:\/\/([a-zA-Z0-9-]+\.)*stackstaging\.com$/', $origin)) {
+            $matched = true;
+        } elseif (preg_match('/^https?:\/\/([a-zA-Z0-9-]+\.)*srisumana\.lk$/', $origin)) {
+            $matched = true;
+        }
+
+        if ($matched) {
+            header("Access-Control-Allow-Origin: {$origin}");
+            header("Access-Control-Allow-Credentials: true");
+            header("Vary: Origin");
+        }
+    } else {
+        // Native mobile apps (Capacitor/Android WebView without HTTP Origin header)
+        header("Access-Control-Allow-Origin: *");
+    }
+
     header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization, X-Auth-Token");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization, X-Auth-Token, Accept, Origin");
+    header("Access-Control-Max-Age: 86400");
     header("Content-Type: application/json; charset=UTF-8");
+
+    // Standard HTTP Security Hardening Headers
+    header("X-Content-Type-Options: nosniff");
+    header("X-Frame-Options: SAMEORIGIN");
+    header("Referrer-Policy: strict-origin-when-cross-origin");
+    header("X-XSS-Protection: 1; mode=block");
+    header("Permissions-Policy: geolocation=(), camera=(), microphone=()");
 }
 
 // Handle CORS Preflight OPTIONS
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     if (!headers_sent()) {
-        http_response_code(200);
+        http_response_code(204);
     }
     exit();
 }
