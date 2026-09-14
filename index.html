@@ -50,24 +50,6 @@
         } catch(e) {}
       })();
     </script>
-    <script>
-      (function() {
-        try {
-          var nativeFetch = window.fetch;
-          if (nativeFetch) {
-            var currentFetch = nativeFetch;
-            Object.defineProperty(window, 'fetch', {
-              get: function() { return currentFetch; },
-              set: function(val) { currentFetch = val; },
-              configurable: true,
-              enumerable: true
-            });
-          }
-        } catch (e) {
-          console.warn('Fetch patch error:', e);
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

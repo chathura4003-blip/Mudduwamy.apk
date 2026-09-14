@@ -16,13 +16,12 @@ const config: CapacitorConfig = {
     hostname: 'localhost',
     allowNavigation: [
       'srisumanamahapiriwena-lk.us.stackstaging.com',
-      '*.stackstaging.com',
       'fonts.googleapis.com',
       'fonts.gstatic.com',
       'cdnjs.cloudflare.com',
       '*.onesignal.com',
+      'onesignal.com',
       'generativelanguage.googleapis.com',
-      '*.google.com',
     ],
   },
   android: {

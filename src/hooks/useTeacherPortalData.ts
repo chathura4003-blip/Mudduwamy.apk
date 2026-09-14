@@ -36,7 +36,7 @@ export interface UseTeacherPortalDataReturn {
 export function useTeacherPortalData({
   classId,
   subjectId,
-  autoRefreshIntervalMs = 30000,
+  autoRefreshIntervalMs = 0,
 }: UseTeacherPortalDataParams = {}): UseTeacherPortalDataReturn {
   const { user } = useAuth();
 
@@ -297,12 +297,15 @@ export function useTeacherPortalData({
     fetchData();
 
     // Auto-polling interval managed via AppLifecycleManager (strictly pauses on background)
-    const cleanupPoll = appLifecycleManager.registerPollTask(
-      'teacher_portal_data_poll',
-      fetchData,
-      autoRefreshIntervalMs,
-      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
-    );
+    let cleanupPoll: (() => void) | null = null;
+    if (autoRefreshIntervalMs > 0) {
+      cleanupPoll = appLifecycleManager.registerPollTask(
+        'teacher_portal_data_poll',
+        fetchData,
+        autoRefreshIntervalMs,
+        { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
+      );
+    }
 
     let debounceTimer: any = null;
     const debouncedFetch = () => {
@@ -320,7 +323,7 @@ export function useTeacherPortalData({
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      cleanupPoll();
+      if (cleanupPoll) cleanupPoll();
       window.removeEventListener('refresh-portal-data', handleWindowSync);
       window.removeEventListener('pirivena-classes-updated', handleWindowSync);
       window.removeEventListener('pirivena-subjects-updated', handleWindowSync);

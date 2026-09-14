@@ -35,7 +35,7 @@ export interface UseStudentPortalDataReturn {
 export function useStudentPortalData({
   classId,
   subjectId,
-  autoRefreshIntervalMs = 30000,
+  autoRefreshIntervalMs = 0,
 }: UseStudentPortalDataParams = {}): UseStudentPortalDataReturn {
   const { user } = useAuth();
 
@@ -229,12 +229,15 @@ function parseArrayField(val: any): string[] {
   useEffect(() => {
     fetchData();
 
-    const cleanupPoll = appLifecycleManager.registerPollTask(
-      'student_portal_data_poll',
-      fetchData,
-      autoRefreshIntervalMs,
-      { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
-    );
+    let cleanupPoll: (() => void) | null = null;
+    if (autoRefreshIntervalMs > 0) {
+      cleanupPoll = appLifecycleManager.registerPollTask(
+        'student_portal_data_poll',
+        fetchData,
+        autoRefreshIntervalMs,
+        { runImmediately: false, runImmediatelyOnResume: true, allowBackground: false }
+      );
+    }
 
     let bc: BroadcastChannel | null = null;
     try {
@@ -262,7 +265,7 @@ function parseArrayField(val: any): string[] {
 
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      cleanupPoll();
+      if (cleanupPoll) cleanupPoll();
       if (bc) bc.close();
       window.removeEventListener('refresh-portal-data', handleWindowSync);
       window.removeEventListener('pirivena-classes-updated', handleWindowSync);
