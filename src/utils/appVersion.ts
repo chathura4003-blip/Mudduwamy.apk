@@ -5,9 +5,9 @@ import { useState, useEffect } from 'react';
  * Handles Semantic Version comparison and Google Drive Direct Download URL conversion.
  */
 
-export const DEFAULT_APP_VERSION = '3.8.5';
-export const CURRENT_APP_VERSION = '3.8.5';
-export const CURRENT_APP_VERSION_CODE = 385;
+export const DEFAULT_APP_VERSION = '3.8.6';
+export const CURRENT_APP_VERSION = '3.8.6';
+export const CURRENT_APP_VERSION_CODE = 386;
 
 let activeAppVersion =
   (typeof window !== 'undefined' && localStorage.getItem('pirivena_active_app_version')) ||

@@ -913,6 +913,8 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
           </span>
         );
     }
+  };
+
   const activeUnattemptedExams = useMemo(
     () => availableStudentExams.filter((e) => !isExamCompleted(e.id)),
     [availableStudentExams, isExamCompleted]
