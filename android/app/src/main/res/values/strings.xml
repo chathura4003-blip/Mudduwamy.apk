@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ශ්‍රී සුමන මහා පිරිවෙන - මුද්දුව</string>
+    <string name="title_activity_main">ශ්‍රී සුමන මහා පිරිවෙන - මුද්දුව</string>
+    <string name="package_name">lk.srisumana.erp</string>
+    <string name="custom_url_scheme">lk.srisumana.erp</string>
+</resources>

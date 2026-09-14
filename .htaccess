@@ -1,0 +1,51 @@
+DirectoryIndex index.html index.php
+
+# Prevent directory listings
+Options -Indexes
+
+# ------------------------------------------------------------------------------
+# Security: Block direct HTTP access to confidential and backend files
+# ------------------------------------------------------------------------------
+<FilesMatch "^\.env|\.(json|sql|log|ini|bak|sh|md|lock)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Explicitly protect sensitive files
+<FilesMatch "^(firebase-service-account\.json|config\.php|schema\.sql|db_diagnose\.php|\.env.*)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order deny,allow
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Pass Authorization Headers to PHP in FastCGI / LiteSpeed / Apache
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Forward /api requests to PHP backend router
+  RewriteRule ^api(/.*)?$ php/router.php [QSA,L]
+
+  # Forward missing /uploads/ requests to PHP router for SVG fallback placeholder
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^uploads/(.*)$ php/router.php [QSA,L]
+
+  # If the requested file or directory exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA Fallback for all other routes to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>

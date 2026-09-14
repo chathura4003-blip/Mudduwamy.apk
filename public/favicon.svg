@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Gradients -->
+    <radialGradient id="goldDisc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFDF0"/>
+      <stop offset="40%" stop-color="#FFE79A"/>
+      <stop offset="75%" stop-color="#E5A823"/>
+      <stop offset="95%" stop-color="#C28212"/>
+      <stop offset="100%" stop-color="#996200"/>
+    </radialGradient>
+
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#FFF3C4" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#FFE58F" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE885"/>
+      <stop offset="30%" stop-color="#DAA520"/>
+      <stop offset="70%" stop-color="#B8860B"/>
+      <stop offset="100%" stop-color="#FFD700"/>
+    </linearGradient>
+
+    <linearGradient id="maroonPetal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#800000"/>
+      <stop offset="50%" stop-color="#5A0000"/>
+      <stop offset="100%" stop-color="#380000"/>
+    </linearGradient>
+
+    <linearGradient id="lotusPink" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#D81B60"/>
+      <stop offset="40%" stop-color="#EC407A"/>
+      <stop offset="80%" stop-color="#F48FB1"/>
+      <stop offset="100%" stop-color="#FCE4EC"/>
+    </linearGradient>
+
+    <!-- Text Path Arcs -->
+    <!-- Top Arc for 'ශ්‍රී සුමන මහා පිරිවෙණ' -->
+    <path id="topTextArc" d="M 95,250 A 155,155 0 0,1 405,250" fill="none"/>
+    <!-- Bottom Arc for 'මුද්දුව රත්නපුර' -->
+    <path id="bottomTextArc" d="M 105,250 A 145,145 0 0,0 395,250" fill="none"/>
+  </defs>
+
+  <!-- Group centered at (250, 250) -->
+  <g transform="translate(250, 250)">
+    <!-- 1. Outer Maroon & Gold Lotus Petals Ring (24 Petals) -->
+    <g>
+      <!-- 24 Petals generated radially -->
+      <!-- Petal 1..24 -->
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(15)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(30)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(45)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(60)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(75)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(90)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(105)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(120)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(135)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(150)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(165)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(180)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(195)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(210)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(225)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(240)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(255)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(270)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(285)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(300)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(315)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(330)"/>
+      <path d="M 0,-248 C 18,-230 22,-200 0,-188 C -22,-200 -18,-230 0,-248 Z" fill="url(#maroonPetal)" stroke="url(#goldBorder)" stroke-width="2.5" transform="rotate(345)"/>
+    </g>
+
+    <!-- 2. Outer Gold Ring Frame -->
+    <circle r="198" fill="none" stroke="url(#goldBorder)" stroke-width="6"/>
+    <circle r="192" fill="none" stroke="#4A0000" stroke-width="3"/>
+
+    <!-- 3. Inner Golden Main Disc -->
+    <circle r="188" fill="url(#goldDisc)" stroke="url(#goldBorder)" stroke-width="4"/>
+
+    <!-- Inner Concentric Bezel Ring -->
+    <circle r="172" fill="none" stroke="#7A0000" stroke-width="2.5" stroke-dasharray="8 4"/>
+    <circle r="168" fill="none" stroke="#B8860B" stroke-width="1.5"/>
+
+    <!-- 4. Center Glowing Backdrop -->
+    <circle r="115" fill="url(#centerGlow)"/>
+
+    <!-- 5. Golden Paddy / Wheat Sheaves (Left & Right) -->
+    <!-- Left Sheaf -->
+    <g transform="scale(-1, 1)">
+      <path d="M 45,30 C 80,-10 95,-60 80,-100" fill="none" stroke="#B8860B" stroke-width="3"/>
+      <!-- Paddy Grains -->
+      <path d="M 55,15 C 70,5 82,12 78,22 C 72,28 62,25 55,15 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 68,-10 C 85,-20 95,-12 92,-2 C 86,5 75,2 68,-10 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 78,-38 C 95,-48 102,-38 98,-28 C 92,-22 82,-26 78,-38 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 82,-68 C 98,-78 102,-65 96,-58 C 90,-52 82,-56 82,-68 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 80,-98 C 92,-108 95,-95 88,-88 C 82,-82 78,-88 80,-98 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+    </g>
+    <!-- Right Sheaf -->
+    <g>
+      <path d="M 45,30 C 80,-10 95,-60 80,-100" fill="none" stroke="#B8860B" stroke-width="3"/>
+      <path d="M 55,15 C 70,5 82,12 78,22 C 72,28 62,25 55,15 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 68,-10 C 85,-20 95,-12 92,-2 C 86,5 75,2 68,-10 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 78,-38 C 95,-48 102,-38 98,-28 C 92,-22 82,-26 78,-38 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 82,-68 C 98,-78 102,-65 96,-58 C 90,-52 82,-56 82,-68 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+      <path d="M 80,-98 C 92,-108 95,-95 88,-88 C 82,-82 78,-88 80,-98 Z" fill="#DAA520" stroke="#7A5200" stroke-width="1"/>
+    </g>
+
+    <!-- 6. Open Dhamma Book (Pustaka) -->
+    <g transform="translate(0, 30)">
+      <!-- Book Shadow -->
+      <ellipse cx="0" cy="22" rx="72" ry="12" fill="#000000" opacity="0.18"/>
+      <!-- Book Cover Base -->
+      <path d="M -70,10 Q 0,22 70,10 L 68,18 Q 0,30 -68,18 Z" fill="#5A0000" stroke="#D4AF37" stroke-width="1.5"/>
+      <!-- Pages Base Left -->
+      <path d="M -68,8 Q -34,16 0,6 L 0,16 Q -34,24 -68,14 Z" fill="#FFF8DC" stroke="#DAA520" stroke-width="1"/>
+      <!-- Pages Base Right -->
+      <path d="M 68,8 Q 34,16 0,6 L 0,16 Q 34,24 68,14 Z" fill="#FFF8DC" stroke="#DAA520" stroke-width="1"/>
+      <!-- Top Open Page Left -->
+      <path d="M -66,5 Q -33,-12 0,2 L 0,12 Q -33,-2 -66,5 Z" fill="#FFFFF0" stroke="#B8860B" stroke-width="1"/>
+      <!-- Top Open Page Right -->
+      <path d="M 66,5 Q 33,-12 0,2 L 0,12 Q 33,-2 66,5 Z" fill="#FFFFF0" stroke="#B8860B" stroke-width="1"/>
+      <!-- Book Center Binding Spine -->
+      <line x1="0" y1="2" x2="0" y2="20" stroke="#7A5200" stroke-width="2"/>
+    </g>
+
+    <!-- 7. Blooming Pink Lotus Flower (Resting on Book) -->
+    <g transform="translate(0, -12)">
+      <!-- Soft Lotus Back Glow -->
+      <circle cx="0" cy="-10" r="35" fill="#FF80AB" opacity="0.3" filter="blur(4px)"/>
+
+      <!-- Outer Petals (Darker Pink) -->
+      <path d="M 0,10 C -35,5 -52,-15 -32,-32 C -18,-20 -5,2 0,10 Z" fill="url(#lotusPink)" stroke="#C2185B" stroke-width="1.2"/>
+      <path d="M 0,10 C 35,5 52,-15 32,-32 C 18,-20 5,2 0,10 Z" fill="url(#lotusPink)" stroke="#C2185B" stroke-width="1.2"/>
+
+      <!-- Middle Petals -->
+      <path d="M 0,10 C -25,-10 -38,-38 -18,-48 C -8,-32 -2,-2 0,10 Z" fill="url(#lotusPink)" stroke="#D81B60" stroke-width="1.2"/>
+      <path d="M 0,10 C 25,-10 38,-38 18,-48 C 8,-32 2,-2 0,10 Z" fill="url(#lotusPink)" stroke="#D81B60" stroke-width="1.2"/>
+
+      <!-- Center Inner Blooming Petals -->
+      <path d="M 0,10 C -14,-15 -20,-52 0,-62 C 20,-52 14,-15 0,10 Z" fill="url(#lotusPink)" stroke="#E91E63" stroke-width="1.2"/>
+      <path d="M 0,10 C -8,-20 -10,-45 0,-52 C 10,-45 8,-20 0,10 Z" fill="#FFF0F5" stroke="#EC407A" stroke-width="1"/>
+    </g>
+
+    <!-- 8. Lower Decorative Swirl Ornament -->
+    <g transform="translate(0, 72)">
+      <path d="M -30,0 C -15,8 15,8 30,0 C 20,-5 -20,-5 -30,0 Z" fill="#DAA520"/>
+      <circle cx="0" cy="8" r="3" fill="#7A0000"/>
+    </g>
+  </g>
+
+  <!-- 9. Curved Sinhala Text Along Paths -->
+  <!-- Top Text: ශ්‍රී සුමන මහා පිරිවෙණ -->
+  <text font-family="'Abhaya Libre', 'Noto Sans Sinhala', 'Kotuwa', sans-serif" font-weight="900" font-size="28" fill="#4A0000" letter-spacing="1">
+    <textPath href="#topTextArc" startOffset="50%" text-anchor="middle">
+      ශ්‍රී සුමන මහා පිරිවෙණ
+    </textPath>
+  </text>
+
+  <!-- Bottom Text: මුද්දුව රත්නපුර -->
+  <text font-family="'Abhaya Libre', 'Noto Sans Sinhala', 'Kotuwa', sans-serif" font-weight="900" font-size="26" fill="#4A0000" letter-spacing="1">
+    <textPath href="#bottomTextArc" startOffset="50%" text-anchor="middle">
+      මුද්දුව රත්නපුර
+    </textPath>
+  </text>
+</svg>

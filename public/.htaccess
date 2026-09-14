@@ -1,0 +1,39 @@
+# 1. Disable directory browsing for security
+Options -Indexes
+
+# 2. Block direct access to sensitive configuration, database, and log files
+<FilesMatch "(\.env|\.sql|\.log|\.json|\.lock|package\.json|tsconfig\.json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 3. Default index documents
+DirectoryIndex index.html index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Forward Authorization Header to PHP in FastCGI / cPanel environments
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # STOP immediately if the request is index.html or scripts in php/
+  RewriteRule ^index\.html$ - [L]
+  RewriteRule ^php(/.*)?$ - [L]
+
+  # Forward /api requests to PHP backend router
+  RewriteRule ^api(/.*)?$ php/router.php [QSA,L]
+
+  # Serve real existing files or directories directly (CSS, JS, images, uploads)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA Fallback for all other frontend routes to index.html
+  RewriteRule . index.html [L]
+</IfModule>

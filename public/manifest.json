@@ -1,0 +1,40 @@
+{
+  "name": "ශ්‍රී සුමන මහා පිරිවෙන් ",
+  "short_name": "සුමන පිරිවෙන",
+  "description": "ශ්‍රී සුමන මහා පිරිවෙන නිල කළමනාකරණ හා ශිෂ්‍ය තොරතුරු පද්ධතිය",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c1917",
+  "theme_color": "#78350f",
+  "icons": [
+    {
+      "src": "/pirivena-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pirivena-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pirivena-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

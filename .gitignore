@@ -1,0 +1,67 @@
+# ==============================================================================
+# Sri Sumana Maha Pirivena ERP - Git Ignore Rules
+# Optimized for GitHub Repository (APK & Web Sources)
+# ==============================================================================
+
+# Node Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build Outputs (Frontend Vite & SSR)
+dist/
+dist-ssr/
+*.local
+
+# Environment & Sensitive Credentials (NEVER COMMIT)
+.env
+.env.production
+.env.development
+.env.local
+.env.*.local
+php/.env
+php/.schema_initialized
+.schema_initialized
+
+# Firebase Private Service Account
+firebase-service-account.json
+php/firebase-service-account.json
+
+# SSL & Encryption Keys
+*.pem
+*.key
+
+# Logs & Diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+php-errors.log
+php/*.log
+
+# Operating System & Editor Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Android Build & Temporary Cache Files
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.cxx/
+android/.externalNativeBuild/
+android/captures/
+android/.navigation/
+android/lint/intermediates/
+android/lint/generated/
+android/lint/outputs/
+android/lint/tmp/
+
+# Android Compiled Binary Packages
+# (Distribute compiled APKs/AABs via GitHub Releases instead of git tracking)
+*.apk
+*.aab
