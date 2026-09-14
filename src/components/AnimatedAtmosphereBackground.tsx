@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
  * Provides rich, fluid, 60fps/120fps animated monastic ambiance across all portals
  * with zero CPU frame drop, optimized for Mobile WebViews, Android APKs, and Desktop.
  */
-export const AnimatedAtmosphereBackground: React.FC = () => {
+export const AnimatedAtmosphereBackground: React.FC = React.memo(() => {
   // Generate deterministic gentle stardust particles for zero hydration mismatches
   const stardustParticles = useMemo(
     () => [
@@ -23,8 +23,7 @@ export const AnimatedAtmosphereBackground: React.FC = () => {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none transform-gpu"
-      style={{ willChange: 'opacity, transform' }}
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
     >
       {/* 🌟 1. Ambient Radial Aurora Mesh Overlay */}
       <div className="absolute inset-0 w-full h-full bg-[radial-gradient(circle_at_20%_15%,rgba(245,158,11,0.14),transparent_45%),radial-gradient(circle_at_80%_85%,rgba(234,88,12,0.12),transparent_50%),radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.08),transparent_55%)] dark:bg-[radial-gradient(circle_at_20%_15%,rgba(245,158,11,0.10),transparent_45%),radial-gradient(circle_at_80%_85%,rgba(234,88,12,0.09),transparent_50%),radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.06),transparent_55%)]" />
@@ -63,6 +62,7 @@ export const AnimatedAtmosphereBackground: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/[0.02] to-transparent dark:via-amber-400/[0.01] pointer-events-none" />
     </div>
   );
-};
+});
 
+AnimatedAtmosphereBackground.displayName = 'AnimatedAtmosphereBackground';
 

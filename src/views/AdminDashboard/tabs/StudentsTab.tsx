@@ -159,6 +159,17 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
     return map;
   }, [students]);
 
+  // Pre-index classes by id and code for O(1) lookups during list rendering
+  const classByIdMap = useMemo(() => {
+    const map = new Map<string, PirivenaClass>();
+    for (let i = 0; i < classes.length; i++) {
+      const c = classes[i];
+      if (c.id) map.set(c.id, c);
+      if (c.code) map.set(c.code, c);
+    }
+    return map;
+  }, [classes]);
+
   // Filtered Students: Filtered ONLY by selected class
   const filteredStudents = useMemo(() => {
     if (classFilter === 'all') return students;
@@ -315,32 +326,35 @@ export const StudentsTab: React.FC<StudentsTabProps> = React.memo(({
             const isTeacher = user.role === 'teacher' || activeSegment === 'teachers';
             const isMonk = user.monkStatus === 'monk' || user.monkStatus === 'upasampada';
 
-            const assignedClass = classes.find(
-              (c) =>
-                c.id === user.classId ||
-                c.id === (user as any).pirivenaClass ||
-                c.code === user.classId
-            );
+            const assignedClass =
+              (user.classId ? classByIdMap.get(user.classId) : undefined) ||
+              ((user as any).pirivenaClass ? classByIdMap.get((user as any).pirivenaClass) : undefined);
 
-            const teacherAssignments = Array.isArray(user.teacherAssignments) ? user.teacherAssignments : [];
-            const teacherAssignedClassIds = new Set(teacherAssignments.map((ta) => ta.classId).filter(Boolean));
-            const teacherAssignedSubjectIds = new Set(teacherAssignments.map((ta) => ta.subjectId).filter(Boolean));
+            let teacherClassesInCharge: PirivenaClass[] = [];
+            let teacherAllClasses: PirivenaClass[] = [];
+            let teacherSubjectsTaught: Subject[] = [];
 
-            const teacherClassesInCharge = classes.filter(
-              (c) => c.teacherInChargeId === user.id || c.teacherInChargeId === user.customId
-            );
-            const teacherAllClasses = classes.filter(
-              (c) =>
-                c.teacherInChargeId === user.id ||
-                c.teacherInChargeId === user.customId ||
-                teacherAssignedClassIds.has(c.id) ||
-                (c.code && teacherAssignedClassIds.has(c.code))
-            );
-            const teacherSubjectsTaught = subjects.filter(
-              (s) =>
-                teacherAssignedSubjectIds.has(s.id) ||
-                (s.code && teacherAssignedSubjectIds.has(s.code))
-            );
+            if (isTeacher) {
+              const teacherAssignments = Array.isArray(user.teacherAssignments) ? user.teacherAssignments : [];
+              const teacherAssignedClassIds = new Set(teacherAssignments.map((ta) => ta.classId).filter(Boolean));
+              const teacherAssignedSubjectIds = new Set(teacherAssignments.map((ta) => ta.subjectId).filter(Boolean));
+
+              teacherClassesInCharge = classes.filter(
+                (c) => c.teacherInChargeId === user.id || c.teacherInChargeId === user.customId
+              );
+              teacherAllClasses = classes.filter(
+                (c) =>
+                  c.teacherInChargeId === user.id ||
+                  c.teacherInChargeId === user.customId ||
+                  teacherAssignedClassIds.has(c.id) ||
+                  (c.code && teacherAssignedClassIds.has(c.code))
+              );
+              teacherSubjectsTaught = subjects.filter(
+                (s) =>
+                  teacherAssignedSubjectIds.has(s.id) ||
+                  (s.code && teacherAssignedSubjectIds.has(s.code))
+              );
+            }
 
             return (
               <div

@@ -8,6 +8,7 @@ export interface UseStudentPortalDataParams {
   classId?: string;
   subjectId?: string;
   autoRefreshIntervalMs?: number;
+  activeTab?: string;
 }
 
 export interface StudentPortalDataState {
@@ -136,6 +137,7 @@ export function useStudentPortalData({
   classId,
   subjectId,
   autoRefreshIntervalMs = 0,
+  activeTab,
 }: UseStudentPortalDataParams = {}): UseStudentPortalDataReturn {
   const { user } = useAuth();
 
@@ -294,28 +296,31 @@ export function useStudentPortalData({
       const effectiveClassId = classId && classId !== 'all' ? classId : (user.classId || user.pirivenaClass || undefined);
       const effectiveSubjectId = subjectId && subjectId !== 'all' ? subjectId : undefined;
 
+      const shouldFetchExams = !activeTab || activeTab === 'overview' || activeTab === 'exams' || activeTab === 'results';
+      const shouldFetchMaterials = !activeTab || activeTab === 'overview' || activeTab === 'materials';
+      const shouldFetchSubmissions = !activeTab || activeTab === 'overview' || activeTab === 'exams' || activeTab === 'results';
+
       const [examsData, matsData, classesData, subjsData, serverSubs, teachersData] =
         await Promise.all([
-          examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []),
-          materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []),
+          shouldFetchExams ? examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []) : Promise.resolve(null),
+          shouldFetchMaterials ? materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []) : Promise.resolve(null),
           getCachedOrFetchClasses(),
           getCachedOrFetchSubjects(),
-          examsApi.getSubmissions(undefined, studentId, effectiveClassId, effectiveSubjectId).catch(() => []),
+          shouldFetchSubmissions ? examsApi.getSubmissions(undefined, studentId, effectiveClassId, effectiveSubjectId).catch(() => []) : Promise.resolve(null),
           getCachedOrFetchTeachers(),
         ]);
 
-      const resolvedSubmissions = Array.isArray(serverSubs) ? serverSubs : [];
-      const serverExamIds = resolvedSubmissions.map((s: any) => s.examId).filter(Boolean);
-
       setPortalState((prev) => ({
         ...prev,
-        exams: Array.isArray(examsData) ? examsData : prev.exams,
-        materials: Array.isArray(matsData) ? matsData : prev.materials,
+        exams: examsData !== null && Array.isArray(examsData) ? examsData : prev.exams,
+        materials: matsData !== null && Array.isArray(matsData) ? matsData : prev.materials,
         classes: Array.isArray(classesData) ? classesData : prev.classes,
         subjects: Array.isArray(subjsData) ? subjsData : prev.subjects,
         teachers: Array.isArray(teachersData) ? teachersData : prev.teachers,
-        completedSubmissions: resolvedSubmissions,
-        completedExamIds: serverExamIds,
+        completedSubmissions: serverSubs !== null && Array.isArray(serverSubs) ? serverSubs : prev.completedSubmissions,
+        completedExamIds: serverSubs !== null && Array.isArray(serverSubs)
+          ? serverSubs.map((s: any) => s.examId).filter(Boolean)
+          : prev.completedExamIds,
         isLoading: false,
         error: null,
       }));
@@ -327,7 +332,7 @@ export function useStudentPortalData({
         error: err?.message || 'Failed to fetch student portal data',
       }));
     }
-  }, [user?.id, user?.customId, user?.classId, user?.pirivenaClass, classId, subjectId]);
+  }, [user?.id, user?.customId, user?.classId, user?.pirivenaClass, classId, subjectId, activeTab]);
 
   // Setup auto-refresh and broadcast event listeners
   useEffect(() => {

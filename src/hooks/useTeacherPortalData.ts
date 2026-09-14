@@ -13,6 +13,7 @@ export interface UseTeacherPortalDataParams {
   classId?: string;
   subjectId?: string;
   autoRefreshIntervalMs?: number;
+  activeTab?: string;
 }
 
 export interface TeacherPortalDataState {
@@ -80,6 +81,7 @@ export function useTeacherPortalData({
   classId,
   subjectId,
   autoRefreshIntervalMs = 0,
+  activeTab,
 }: UseTeacherPortalDataParams = {}): UseTeacherPortalDataReturn {
   const { user } = useAuth();
 
@@ -289,21 +291,25 @@ export function useTeacherPortalData({
         studentsPromise = Promise.resolve([]);
       }
 
+      const shouldFetchStudents = !activeTab || activeTab === 'roster' || activeTab === 'monitoring' || activeTab === 'overview';
+      const shouldFetchExams = !activeTab || activeTab === 'exams' || activeTab === 'monitoring' || activeTab === 'overview';
+      const shouldFetchMaterials = !activeTab || activeTab === 'materials' || activeTab === 'overview';
+
       const [cData, subData, eData, uData, mData] = await Promise.all([
         getCachedOrFetchClasses(),
         getCachedOrFetchSubjects(),
-        examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []),
-        studentsPromise.catch(() => []),
-        materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []),
+        shouldFetchExams ? examsApi.getExams(effectiveClassId, effectiveSubjectId).catch(() => []) : Promise.resolve(null),
+        shouldFetchStudents ? studentsPromise.catch(() => []) : Promise.resolve(null),
+        shouldFetchMaterials ? materialsApi.getMaterials(effectiveClassId, effectiveSubjectId).catch(() => []) : Promise.resolve(null),
       ]);
 
       setPortalState((prev) => ({
         ...prev,
         classes: Array.isArray(cData) ? cData : prev.classes,
         subjects: Array.isArray(subData) ? subData : prev.subjects,
-        exams: Array.isArray(eData) ? eData : prev.exams,
-        students: Array.isArray(uData) ? uData : prev.students,
-        materials: Array.isArray(mData) ? mData : prev.materials,
+        exams: eData !== null && Array.isArray(eData) ? eData : prev.exams,
+        students: uData !== null && Array.isArray(uData) ? uData : prev.students,
+        materials: mData !== null && Array.isArray(mData) ? mData : prev.materials,
         isLoading: false,
         error: null,
       }));
@@ -315,7 +321,7 @@ export function useTeacherPortalData({
         error: err?.message || 'Failed to fetch teacher portal data',
       }));
     }
-  }, [user?.id, user?.role, classId, subjectId, teacherAssignments]);
+  }, [user?.id, user?.role, classId, subjectId, teacherAssignments, activeTab]);
 
   // Initial load and live sync hooks
   useEffect(() => {

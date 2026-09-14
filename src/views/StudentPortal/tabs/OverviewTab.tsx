@@ -28,6 +28,8 @@ import {
 import type { User, PirivenaClass, StudyMaterial, Exam, LibraryBook } from '../../../types';
 import { handleAvatarError, getImageUrl } from '../../../utils/imageHelper';
 import { triggerHaptic } from '../../../utils/haptics';
+import { LiveSriLankaClock } from '../../../components/LiveSriLankaClock';
+import { LivePeriodCountdown } from '../../../components/LivePeriodCountdown';
 
 interface OverviewTabProps {
   user: User | null;
@@ -251,12 +253,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold text-[10px] border border-amber-500/30">
                     {studentClass ? studentClass.name : isSi ? 'පන්ති කාලසටහන' : 'Class Schedule'}
                   </span>
-                  {currentLiveTimeStr && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>{currentLiveTimeStr}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <LiveSriLankaClock includeSeconds={true} />
+                  </div>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-0.5">
                   {isSi
@@ -347,20 +347,27 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                       <span className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-icon-bounce shrink-0" />
                         <span>{isSi ? 'අවසන් වීමට:' : 'Time Left:'}</span>
-                        <span className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-500/25 text-emerald-950 dark:text-emerald-200 border border-emerald-500/40 shadow-xs tracking-wider">
-                          {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}
-                        </span>
+                        <LivePeriodCountdown
+                          startMin={activeOngoingPeriod.period.startMin}
+                          endMin={activeOngoingPeriod.period.endMin}
+                          variant="text"
+                          className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-500/25 text-emerald-950 dark:text-emerald-200 border border-emerald-500/40 shadow-xs tracking-wider"
+                        />
                       </span>
-                      <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                        {Math.round(activeOngoingPeriod.progressPercent)}%
-                      </span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-stone-800 overflow-hidden shadow-inner">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
-                        style={{ width: `${activeOngoingPeriod.progressPercent}%` }}
+                      <LivePeriodCountdown
+                        startMin={activeOngoingPeriod.period.startMin}
+                        endMin={activeOngoingPeriod.period.endMin}
+                        variant="percent"
+                        className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400"
                       />
                     </div>
+                    <LivePeriodCountdown
+                      startMin={activeOngoingPeriod.period.startMin}
+                      endMin={activeOngoingPeriod.period.endMin}
+                      variant="bar"
+                      barContainerClassName="w-full h-2 rounded-full bg-slate-200 dark:bg-stone-800 overflow-hidden shadow-inner"
+                      barClassName="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
+                    />
                   </div>
                 </div>
               ) : currentLivePeriod.isMorningPuja ? (

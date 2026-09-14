@@ -148,7 +148,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({
     refetch: fetchInitialData,
     setExams,
     setMaterials,
-  } = useTeacherPortalData();
+  } = useTeacherPortalData({ activeTab });
 
   const teacherExams = assignedExams;
 

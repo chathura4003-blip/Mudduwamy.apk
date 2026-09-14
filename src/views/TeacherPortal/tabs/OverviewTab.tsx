@@ -39,6 +39,8 @@ import { useToast } from '../../../context/ToastContext';
 import { playNotificationSound } from '../../../utils/soundHelper';
 import { notificationService } from '../../../services/notificationService';
 import { navigationHistoryManager } from '../../../services/navigationHistoryManager';
+import { LiveSriLankaClock } from '../../../components/LiveSriLankaClock';
+import { LivePeriodCountdown } from '../../../components/LivePeriodCountdown';
 import {
   getSriLankaDate,
   getSriLankaDateString,
@@ -116,10 +118,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const { language } = useLanguage();
   const toast = useToast();
   const isSi = language === 'si';
-  const [currentTime, setCurrentTime] = useState<string>(() =>
-    formatSriLankaDateTime(null, isSi ? 'si' : 'en', true, true)
-  );
-  const [currentSecTick, setCurrentSecTick] = useState<number>(() => Date.now());
+  const [periodTick, setPeriodTick] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        setPeriodTick(Date.now());
+      }
+    }, 20000);
+    return () => clearInterval(timer);
+  }, []);
   const [showClassesModal, setShowClassesModal] = useState<boolean>(false);
   const [showSubjectsModal, setShowSubjectsModal] = useState<boolean>(false);
 
@@ -267,29 +274,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       activeOngoingPeriod: activeData,
       upcomingNextPeriod: nextData,
     };
-  }, [todayKey, teacherTodaySlots, currentSecTick]);
+  }, [todayKey, teacherTodaySlots, periodTick]);
 
-  const [currentLiveTimeStr, setCurrentLiveTimeStr] = useState<string>(() =>
-    formatSriLankaTime(null, true)
-  );
-
-  // Live Clock locked to Sri Lanka Standard Time (Asia/Colombo) - updates every 1s (second-by-second)
-  useEffect(() => {
-    const updateTime = () => {
-      setCurrentLiveTimeStr(formatSriLankaTime(null, true));
-      setCurrentTime(formatSriLankaDateTime(null, isSi ? 'si' : 'en', true, true));
-      setCurrentSecTick(Date.now());
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, [isSi]);
+  const currentPeriodNum = activeOngoingPeriod?.period?.period;
 
   // Automated Period Notification Trigger (Chime + Toast + Native Notification)
   useEffect(() => {
-    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot) return;
+    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot || !currentPeriodNum) return;
 
-    const currentPeriodNum = activeOngoingPeriod.period.period;
     const todayStr = getSriLankaDateString();
     const sessionKey = `pirivena_teacher_notified_${todayStr}_p${currentPeriodNum}_${activeOngoingPeriod.slot.classId}`;
 
@@ -316,7 +308,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       body: msg,
       sound: true,
     });
-  }, [periodAlertsEnabled, activeOngoingPeriod, isSi, toast]);
+  }, [periodAlertsEnabled, currentPeriodNum, activeOngoingPeriod?.slot?.classId, isSi, toast]);
 
   // Toggle Notification Reminders
   const handleTogglePeriodNotifications = async () => {
@@ -350,7 +342,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     // 07:30 AM = 450 minutes from midnight
     // 01:30 PM = 810 minutes from midnight
     return currentMins >= 450 && currentMins <= 810;
-  }, [todayKey, currentSecTick]);
+  }, [todayKey, periodTick]);
 
   const monkStudentsCount = assignedStudents.filter((s) => s.monkStatus === 'monk').length;
   const layStudentsCount = assignedStudents.filter((s) => s.monkStatus === 'lay').length;
@@ -439,12 +431,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
           {/* Quick Timetable & Live Clock Bar */}
           <div className="pt-2.5 border-t border-amber-600/30 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 text-xs">
-            {currentTime ? (
-              <span className="text-[10px] sm:text-[11px] font-medium text-amber-200/80 flex items-center gap-1">
-                <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-icon-spin-slow" />
-                <span className="leading-normal">{currentTime}</span>
-              </span>
-            ) : <div />}
+            <span className="text-[10px] sm:text-[11px] font-medium text-amber-200/80 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-amber-400 shrink-0 animate-icon-spin-slow" />
+              <LiveSriLankaClock format="full" isSi={isSi} className="leading-normal" />
+            </span>
 
             <button
               type="button"
@@ -483,12 +473,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     {DAYS.find((d) => d.id === todayKey)?.icon} {DAYS.find((d) => d.id === todayKey)?.labelSi}
                   </span>
                 )}
-                {currentLiveTimeStr && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>{currentLiveTimeStr}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <LiveSriLankaClock format="time" includeSeconds={true} />
+                </div>
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 {isSi ? 'ශ්‍රී ලංකා සම්මත වේලාවට අනුව සජීවීව ක්‍රියාත්මක වේ' : 'Live synchronized to Sri Lanka Standard Time'}
@@ -592,22 +580,29 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <span className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-icon-bounce shrink-0" />
                       <span>{isSi ? 'අවසන් වීමට:' : 'Time Left:'}</span>
-                      <span className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-500/25 text-emerald-950 dark:text-emerald-200 border border-emerald-500/40 shadow-xs tracking-wider">
-                        {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}
-                      </span>
+                      <LivePeriodCountdown
+                        startMin={activeOngoingPeriod.period.startMin}
+                        endMin={activeOngoingPeriod.period.endMin}
+                        variant="text"
+                        className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-500/25 text-emerald-950 dark:text-emerald-200 border border-emerald-500/40 shadow-xs tracking-wider"
+                      />
                     </span>
-                    <span className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                      {Math.round(activeOngoingPeriod.progressPercent)}%
-                    </span>
+                    <LivePeriodCountdown
+                      startMin={activeOngoingPeriod.period.startMin}
+                      endMin={activeOngoingPeriod.period.endMin}
+                      variant="percent"
+                      className="font-mono text-[11px] font-bold text-slate-500 dark:text-slate-400"
+                    />
                   </div>
 
                   {/* Animated Progress Bar */}
-                  <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-stone-800 overflow-hidden relative shadow-inner">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
-                      style={{ width: `${activeOngoingPeriod.progressPercent}%` }}
-                    />
-                  </div>
+                  <LivePeriodCountdown
+                    startMin={activeOngoingPeriod.period.startMin}
+                    endMin={activeOngoingPeriod.period.endMin}
+                    variant="bar"
+                    barContainerClassName="w-full h-2 rounded-full bg-slate-200 dark:bg-stone-800 overflow-hidden relative shadow-inner"
+                    barClassName="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
+                  />
                 </div>
               </div>
             ) : (
@@ -672,9 +667,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse shrink-0" />
                     <span>{isSi ? 'ආරම්භ වීමට:' : 'Starts in:'}</span>
-                    <span className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-amber-500/20 dark:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-xs tracking-wider">
-                      {upcomingNextPeriod.startsInMins}:{upcomingNextPeriod.startsInSecStr}
-                    </span>
+                    <LivePeriodCountdown
+                      startMin={upcomingNextPeriod.period.startMin}
+                      mode="starts_in"
+                      variant="text"
+                      className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-amber-500/20 dark:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-xs tracking-wider"
+                    />
                   </span>
                   <span className="text-[11px] font-mono font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-lg border border-amber-500/20 text-amber-900 dark:text-amber-300">
                     {upcomingNextPeriod.period.startTime}

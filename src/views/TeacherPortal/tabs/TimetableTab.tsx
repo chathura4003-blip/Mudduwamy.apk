@@ -33,6 +33,8 @@ import { triggerHaptic } from '../../../utils/haptics';
 import { triggerUniversalPrint } from '../../../utils/printHelper';
 import { playNotificationSound } from '../../../utils/soundHelper';
 import { notificationService } from '../../../services/notificationService';
+import { LiveSriLankaClock } from '../../../components/LiveSriLankaClock';
+import { LivePeriodCountdown } from '../../../components/LivePeriodCountdown';
 
 import {
   getSriLankaDate,
@@ -110,10 +112,15 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
   const { language } = useLanguage();
   const toast = useToast();
   const isSi = language === 'si';
-  const [currentTimeStr, setCurrentTimeStr] = useState<string>(() =>
-    formatSriLankaDateTime(null, isSi ? 'si' : 'en', true, true)
-  );
-  const [currentSecTick, setCurrentSecTick] = useState<number>(() => Date.now());
+  const [periodTick, setPeriodTick] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden) {
+        setPeriodTick(Date.now());
+      }
+    }, 20000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 🔔 Timetable Period Reminder Notifications State
   const [periodAlertsEnabled, setPeriodAlertsEnabled] = useState<boolean>(() => {
@@ -132,17 +139,6 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
   const todayKey: DayKey | null = getSriLankaDayKey();
   const initialDay: DayKey | 'all' = todayKey || 'monday';
   const [activeDay, setActiveDay] = useState<DayKey | 'all'>(initialDay);
-
-  // Live Clock locked to Sri Lanka Standard Time (Asia/Colombo) - updates every 1s (second-by-second)
-  useEffect(() => {
-    const updateTime = () => {
-      setCurrentTimeStr(formatSriLankaDateTime(null, isSi ? 'si' : 'en', true, true));
-      setCurrentSecTick(Date.now());
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, [isSi]);
 
   // Aggregate all teaching slots for this teacher across all classes
   const teacherSlots = useMemo(() => {
@@ -235,17 +231,18 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
       remainingSecStr,
       progressPercent,
     };
-  }, [todayKey, filteredTeacherSlots, currentSecTick]);
+  }, [todayKey, filteredTeacherSlots, periodTick]);
 
   const getSlot = (day: DayKey, period: number): TeacherSlotInfo | undefined => {
     return filteredTeacherSlots.find((s) => s.day === day && s.periodNumber === period);
   };
 
+  const currentPeriodNum = activeOngoingPeriod?.period?.period;
+
   // Automated Period Notification Trigger (Chime + Toast + Native Notification)
   useEffect(() => {
-    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot) return;
+    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot || !currentPeriodNum) return;
 
-    const currentPeriodNum = activeOngoingPeriod.period.period;
     const todayStr = getSriLankaDateString();
     const sessionKey = `pirivena_teacher_notified_${todayStr}_p${currentPeriodNum}_${activeOngoingPeriod.slot.classId}`;
 
@@ -271,7 +268,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
       body: msg,
       sound: true,
     });
-  }, [periodAlertsEnabled, activeOngoingPeriod, isSi, toast]);
+  }, [periodAlertsEnabled, currentPeriodNum, activeOngoingPeriod?.slot?.classId, isSi, toast]);
 
   // Toggle Notification Reminders
   const handleTogglePeriodNotifications = async () => {
@@ -330,7 +327,7 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
             </div>
             <p className="text-amber-200/90 text-xs font-mono font-semibold flex items-center gap-1.5 mt-0.5">
               <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>{currentTimeStr || 'Sri Lanka Standard Time'}</span>
+              <LiveSriLankaClock format="full" isSi={isSi} />
             </p>
           </div>
         </div>
@@ -411,8 +408,22 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
               {/* Live Countdown Badge */}
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 dark:bg-emerald-500/25 border border-emerald-500/40 text-emerald-950 dark:text-emerald-200 text-xs font-black shadow-xs font-mono">
                 <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-icon-bounce shrink-0" />
-                <span>{isSi ? 'ඉතිරි:' : 'Left:'} {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}</span>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-300">({Math.round(activeOngoingPeriod.progressPercent)}%)</span>
+                <span>{isSi ? 'ඉතිරි:' : 'Left:'}</span>
+                <LivePeriodCountdown
+                  startMin={activeOngoingPeriod.period.startMin}
+                  endMin={activeOngoingPeriod.period.endMin}
+                  mode="remaining"
+                />
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-300">
+                  (
+                  <LivePeriodCountdown
+                    startMin={activeOngoingPeriod.period.startMin}
+                    endMin={activeOngoingPeriod.period.endMin}
+                    mode="remaining"
+                    variant="percent"
+                  />
+                  )
+                </span>
               </div>
 
               {activeOngoingPeriod.slot && onNavigate && (
@@ -431,12 +442,14 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
           </div>
 
           {/* Animated Progress Bar */}
-          <div className="w-full h-2 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner">
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
-              style={{ width: `${activeOngoingPeriod.progressPercent}%` }}
-            />
-          </div>
+          <LivePeriodCountdown
+            startMin={activeOngoingPeriod.period.startMin}
+            endMin={activeOngoingPeriod.period.endMin}
+            mode="remaining"
+            variant="bar"
+            barContainerClassName="w-full h-2 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner"
+            barClassName="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
+          />
         </div>
       )}
 
@@ -653,7 +666,11 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
                     <div className="flex items-center gap-1">
                       {isLiveNow && activeOngoingPeriod && (
                         <span className="text-[10px] font-mono font-black text-emerald-800 dark:text-emerald-300 bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                          {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}
+                          <LivePeriodCountdown
+                            startMin={p.startMin}
+                            endMin={p.endMin}
+                            mode="remaining"
+                          />
                         </span>
                       )}
                       <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 font-semibold bg-white dark:bg-stone-700 px-2 py-0.5 rounded-md border border-slate-200 dark:border-stone-600">

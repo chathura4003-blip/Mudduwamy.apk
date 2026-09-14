@@ -163,6 +163,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
   } = useStudentPortalData({
     classId: user?.classId || (user as any)?.pirivenaClass || user?.classLevel || undefined,
     subjectId: matSubjectFilter !== 'all' ? matSubjectFilter : undefined,
+    activeTab: activePortalTab,
   });
 
   // Modal dialog pointers (lean references)
@@ -434,22 +435,6 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
     { period: 7, startTime: '12:00 PM', endTime: '12:45 PM', startMin: 720, endMin: 765 },
     { period: 8, startTime: '12:45 PM', endTime: '01:30 PM', startMin: 765, endMin: 810 },
   ];
-
-  const [currentLiveTimeStr, setCurrentLiveTimeStr] = useState<string>(() =>
-    formatSriLankaTime(null, true)
-  );
-  const [currentSecTick, setCurrentSecTick] = useState<number>(() => Date.now());
-
-  // Live Clock locked to Sri Lanka Standard Time (Asia/Colombo) - updates every 1s
-  useEffect(() => {
-    const updateTime = () => {
-      setCurrentLiveTimeStr(formatSriLankaTime(null, true));
-      setCurrentSecTick(Date.now());
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const [currentLivePeriod, setCurrentLivePeriod] = useState<{
     day: string;
@@ -759,7 +744,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
       activeOngoingPeriod: activeData,
       upcomingNextPeriod: nextData,
     };
-  }, [todaySlotsForStudent, currentLivePeriod, currentSecTick]);
+  }, [todaySlotsForStudent, currentLivePeriod]);
 
   // Period Reminder Notifications State
   const [periodAlertsEnabled, setPeriodAlertsEnabled] = useState<boolean>(() => {
@@ -771,12 +756,12 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
   });
 
   const lastNotifiedPeriodRef = useRef<number | null>(null);
+  const currentPeriodNum = activeOngoingPeriod?.period?.period;
 
   // Automated Period Notification Trigger (Chime + Toast + Native Notification)
   useEffect(() => {
-    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot) return;
+    if (!periodAlertsEnabled || !activeOngoingPeriod || !activeOngoingPeriod.slot || !currentPeriodNum) return;
 
-    const currentPeriodNum = activeOngoingPeriod.period.period;
     const todayStr = getSriLankaDateString();
     const sessionKey = `pirivena_student_notified_${todayStr}_p${currentPeriodNum}_${activeOngoingPeriod.slot.classId || 'cls'}`;
 
@@ -814,7 +799,7 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
       body: msg,
       sound: true,
     });
-  }, [periodAlertsEnabled, activeOngoingPeriod, isSi, toast]);
+  }, [periodAlertsEnabled, currentPeriodNum, activeOngoingPeriod?.slot?.classId, isSi, toast]);
 
   const handleTogglePeriodNotifications = async () => {
     triggerHaptic('medium');
@@ -928,9 +913,10 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
           </span>
         );
     }
-  };
-
-  const activeUnattemptedExams = availableStudentExams.filter((e) => !isExamCompleted(e.id));
+  const activeUnattemptedExams = useMemo(
+    () => availableStudentExams.filter((e) => !isExamCompleted(e.id)),
+    [availableStudentExams, isExamCompleted]
+  );
 
   // Broadcast stats to Navbar
   useEffect(() => {
@@ -991,7 +977,6 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
               isDashboardTimetableVisible={isDashboardTimetableVisible}
               setIsDashboardTimetableVisible={() => {}}
               currentLivePeriod={currentLivePeriod}
-              currentLiveTimeStr={currentLiveTimeStr}
               activeOngoingPeriod={activeOngoingPeriod}
               upcomingNextPeriod={upcomingNextPeriod}
               periodAlertsEnabled={periodAlertsEnabled}
@@ -1064,7 +1049,6 @@ export const StudentPortal: React.FC<StudentPortalProps> = ({
                 isWeeklyGridView={isWeeklyGridView}
                 setIsWeeklyGridView={setIsWeeklyGridView}
                 currentLivePeriod={currentLivePeriod}
-                currentLiveTimeStr={currentLiveTimeStr}
                 activeOngoingPeriod={activeOngoingPeriod}
                 upcomingNextPeriod={upcomingNextPeriod}
                 getSubjectIconAndColor={getSubjectIconAndColor}

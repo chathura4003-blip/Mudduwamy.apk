@@ -3,6 +3,8 @@ import { Calendar, Clock, BookMarked, Printer, Sparkles } from 'lucide-react';
 import type { PirivenaClass, ClassTimetableSlot } from '../../../types';
 import { triggerHaptic } from '../../../utils/haptics';
 import { triggerUniversalPrint } from '../../../utils/printHelper';
+import { LiveSriLankaClock } from '../../../components/LiveSriLankaClock';
+import { LivePeriodCountdown } from '../../../components/LivePeriodCountdown';
 
 interface TimetableTabProps {
   studentClass: PirivenaClass | undefined;
@@ -51,12 +53,10 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
               <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold text-[10px] border border-amber-500/30">
                 {studentClass ? studentClass.name : isSi ? 'සාමාන්‍ය කාලසටහන' : 'Standard Schedule'}
               </span>
-              {currentLiveTimeStr && (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{currentLiveTimeStr}</span>
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-stone-800 border border-slate-200 dark:border-stone-700 text-stone-900 dark:text-amber-300 text-[10px] font-mono font-black shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <LiveSriLankaClock includeSeconds={true} />
+              </div>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {isSi
@@ -231,10 +231,15 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {isLiveNow && activeOngoingPeriod && (
+                          {isLiveNow && (
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/20 dark:bg-emerald-500/25 border border-emerald-500/40 text-emerald-950 dark:text-emerald-200 text-xs font-mono font-black shadow-2xs">
                               <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-icon-bounce shrink-0" />
-                              <span>{isSi ? 'ඉතිරි:' : 'Left:'} {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}</span>
+                              <LivePeriodCountdown
+                                startMin={slot.startMin || (activeOngoingPeriod?.period?.startMin ?? 460)}
+                                endMin={slot.endMin || (activeOngoingPeriod?.period?.endMin ?? 500)}
+                                variant="text"
+                                prefix={isSi ? 'ඉතිරි:' : 'Left:'}
+                              />
                             </div>
                           )}
                           <div className="flex items-center gap-2 text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-stone-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-stone-700">
@@ -247,13 +252,14 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
                       </div>
 
                       {/* Live Progress Bar for active slot */}
-                      {isLiveNow && activeOngoingPeriod && (
-                        <div className="w-full h-1.5 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner">
-                          <div
-                            className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
-                            style={{ width: `${activeOngoingPeriod.progressPercent}%` }}
-                          />
-                        </div>
+                      {isLiveNow && (
+                        <LivePeriodCountdown
+                          startMin={slot.startMin || (activeOngoingPeriod?.period?.startMin ?? 460)}
+                          endMin={slot.endMin || (activeOngoingPeriod?.period?.endMin ?? 500)}
+                          variant="bar"
+                          barContainerClassName="w-full h-1.5 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner"
+                          barClassName="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
+                        />
                       )}
                     </div>
                   );
@@ -341,10 +347,15 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {isLiveNow && activeOngoingPeriod && (
+                          {isLiveNow && (
                             <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/20 dark:bg-emerald-500/25 border border-emerald-500/40 text-emerald-950 dark:text-emerald-200 text-xs font-mono font-black shadow-2xs">
                               <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-icon-bounce shrink-0" />
-                              <span>{isSi ? 'ඉතිරි:' : 'Left:'} {activeOngoingPeriod.remainingMins}:{activeOngoingPeriod.remainingSecStr}</span>
+                              <LivePeriodCountdown
+                                startMin={slot.startMin || (activeOngoingPeriod?.period?.startMin ?? 460)}
+                                endMin={slot.endMin || (activeOngoingPeriod?.period?.endMin ?? 500)}
+                                variant="text"
+                                prefix={isSi ? 'ඉතිරි:' : 'Left:'}
+                              />
                             </div>
                           )}
                           <div className="flex items-center gap-2 text-xs font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-stone-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-stone-700">
@@ -357,13 +368,14 @@ export const TimetableTab: React.FC<TimetableTabProps> = ({
                       </div>
 
                       {/* Live Progress Bar for active slot */}
-                      {isLiveNow && activeOngoingPeriod && (
-                        <div className="w-full h-1.5 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner">
-                          <div
-                            className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
-                            style={{ width: `${activeOngoingPeriod.progressPercent}%` }}
-                          />
-                        </div>
+                      {isLiveNow && (
+                        <LivePeriodCountdown
+                          startMin={slot.startMin || (activeOngoingPeriod?.period?.startMin ?? 460)}
+                          endMin={slot.endMin || (activeOngoingPeriod?.period?.endMin ?? 500)}
+                          variant="bar"
+                          barContainerClassName="w-full h-1.5 rounded-full bg-amber-500/20 dark:bg-stone-800 overflow-hidden relative shadow-inner"
+                          barClassName="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-500 transition-all duration-1000 ease-linear rounded-full shadow-xs"
+                        />
                       )}
                     </div>
                   );

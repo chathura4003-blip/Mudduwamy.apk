@@ -2916,23 +2916,64 @@ header,
   will-change: transform, opacity;
 }
 
-/* Disable GPU-heavy live backdrop-filters on mobile devices to sustain solid 60/120fps */
-@media (max-width: 768px) {
+/* Disable GPU-heavy live backdrop-filters and continuous mesh animations on mobile devices to sustain solid 60/120fps */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .backdrop-blur-3xl,
   .backdrop-blur-2xl,
   .backdrop-blur-xl,
   .backdrop-blur-lg,
   .backdrop-blur-md,
   .backdrop-blur-sm,
-  .backdrop-blur-xs {
+  .backdrop-blur-xs,
+  [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+
+  /* Disable heavy infinite background float animations on mobile/touch screens to save GPU battery & frame rate */
+  .animate-bg-float-1,
+  .animate-bg-float-2,
+  .animate-bg-float-3,
+  .animate-bg-float-4,
+  .animate-bg-particle,
+  .animate-bg-stardust {
+    animation: none !important;
+    will-change: auto !important;
   }
 
   /* Immediate 0ms touch responsiveness */
   button, a, input, select, textarea, [role="button"] {
     touch-action: manipulation;
   }
+}
+
+body.capacitor-mobile .backdrop-blur-3xl,
+body.capacitor-mobile .backdrop-blur-2xl,
+body.capacitor-mobile .backdrop-blur-xl,
+body.capacitor-mobile .backdrop-blur-lg,
+body.capacitor-mobile .backdrop-blur-md,
+body.capacitor-mobile .backdrop-blur-sm,
+body.capacitor-mobile .backdrop-blur-xs,
+body.capacitor-mobile [class*="backdrop-blur"],
+html[data-platform="android"] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.capacitor-mobile .animate-bg-float-1,
+body.capacitor-mobile .animate-bg-float-2,
+body.capacitor-mobile .animate-bg-float-3,
+body.capacitor-mobile .animate-bg-float-4,
+body.capacitor-mobile .animate-bg-particle,
+body.capacitor-mobile .animate-bg-stardust,
+html[data-platform="android"] .animate-bg-float-1,
+html[data-platform="android"] .animate-bg-float-2,
+html[data-platform="android"] .animate-bg-float-3,
+html[data-platform="android"] .animate-bg-float-4,
+html[data-platform="android"] .animate-bg-particle,
+html[data-platform="android"] .animate-bg-stardust {
+  animation: none !important;
+  will-change: auto !important;
 }
 
 /* Enable hardware-accelerated smooth touch momentum scrolling across all portals */
