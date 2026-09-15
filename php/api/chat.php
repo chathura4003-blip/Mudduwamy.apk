@@ -368,6 +368,19 @@ if ($method === 'DELETE') {
     }
 
     try {
+        $checkStmt = $pdo->prepare("SELECT sender_id FROM chat_messages WHERE id = :id LIMIT 1");
+        $checkStmt->execute([':id' => $id]);
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        if (!$existing) {
+            sendJsonResponse(["error" => "Message not found or already deleted."], 404);
+        }
+        $isAdmin = in_array(strtolower($authUser['role'] ?? ''), ['admin', 'superadmin']);
+        $authId = (string)($authUser['id'] ?? $authUser['username'] ?? '');
+        $senderId = (string)($existing['sender_id'] ?? '');
+        if (!$isAdmin && $authId !== $senderId) {
+            sendJsonResponse(["error" => "ඔබට මෙම පණිවිඩය මකා දැමීමට අවසර නැත (Forbidden)."], 403);
+        }
+
         $stmt = $pdo->prepare("DELETE FROM chat_messages WHERE id = :id");
         $stmt->execute([':id' => $id]);
         sendJsonResponse([

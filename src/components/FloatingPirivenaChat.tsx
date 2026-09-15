@@ -42,6 +42,8 @@ import {
   VolumeX,
   PinOff,
   Users,
+  ArrowLeft,
+  ChevronDown,
 } from 'lucide-react';
 import type { User, ChatMessage, ChatReaction } from '../types';
 import { copyToClipboard } from '../utils/clipboardHelper';
@@ -136,15 +138,6 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
     return () => window.removeEventListener('switch-portal-subtab', handleSubTabSwitch);
   }, []);
 
-  // Register with Android Back Button Stack when Chat window is open
-  useEffect(() => {
-    if (isOpen) {
-      navigationHistoryManager.pushModal('pirivena_floating_chat', () => setIsOpen(false), 25);
-    } else {
-      navigationHistoryManager.removeModal('pirivena_floating_chat');
-    }
-    return () => navigationHistoryManager.removeModal('pirivena_floating_chat');
-  }, [isOpen]);
 
   const isOnOverviewTab = useMemo(() => {
     const t = currentSubTab.trim().toLowerCase();
@@ -317,11 +310,186 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
     typeof window !== 'undefined' ? (window.screen?.height || window.innerHeight) : 800
   );
 
-  // Track open state on document.body for global bottom-bar and modal coordination
+  // Selected message helpers for WhatsApp top action bar
+  const selectedMsg = useMemo(() => {
+    if (!selectedMessageId) return null;
+    return messages.find((m) => m.id === selectedMessageId) || null;
+  }, [selectedMessageId, messages]);
+
+  const isSelectedMine = useMemo(() => {
+    if (!selectedMsg || !user) return false;
+    return Boolean(
+      (user.id && selectedMsg.sender_id && String(selectedMsg.sender_id) === String(user.id)) ||
+      (user.username && selectedMsg.sender_id && String(selectedMsg.sender_id) === String(user.username)) ||
+      ((user as any).studentId && selectedMsg.sender_id && String(selectedMsg.sender_id) === String((user as any).studentId)) ||
+      ((user as any).teacherId && selectedMsg.sender_id && String(selectedMsg.sender_id) === String((user as any).teacherId))
+    );
+  }, [selectedMsg, user]);
+
+  const canDeleteSelected = useMemo(() => {
+    if (!selectedMsg || !user) return false;
+    const isAdmin = user.role === 'admin' || user.role === 'superadmin';
+    return isAdmin || isSelectedMine;
+  }, [selectedMsg, user, isSelectedMine]);
+
+  // Scroll to bottom tracking state
+  const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
+  const chatScrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleChatScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const isNearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 160;
+    setShowScrollBottomBtn(!isNearBottom);
+  };
+
+  const scrollToBottom = () => {
+    triggerHaptic('light');
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // 📱 COMPREHENSIVE HIERARCHICAL ANDROID BACK BUTTON STACK (Priority 50 - 90)
+  // Ensures hardware / gesture back closes top-most sub-layer first!
+  // ─────────────────────────────────────────────────────────────
+
+  // 1. Priority 90: Fullscreen image preview lightbox
+  useEffect(() => {
+    if (previewImage) {
+      navigationHistoryManager.pushModal('chat_preview_image', () => setPreviewImage(null), 90);
+    } else {
+      navigationHistoryManager.removeModal('chat_preview_image');
+    }
+    return () => navigationHistoryManager.removeModal('chat_preview_image');
+  }, [previewImage]);
+
+  // 2. Priority 85: Confirmation dialog (delete/clear)
+  useEffect(() => {
+    if (confirmDialog?.isOpen) {
+      navigationHistoryManager.pushModal('chat_confirm_dialog', () => setConfirmDialog(null), 85);
+    } else {
+      navigationHistoryManager.removeModal('chat_confirm_dialog');
+    }
+    return () => navigationHistoryManager.removeModal('chat_confirm_dialog');
+  }, [confirmDialog?.isOpen]);
+
+  // 3. Priority 80: Full Pro Emoji modal
+  useEffect(() => {
+    if (showFullEmojiModal) {
+      navigationHistoryManager.pushModal('chat_emoji_modal', () => setShowFullEmojiModal(false), 80);
+    } else {
+      navigationHistoryManager.removeModal('chat_emoji_modal');
+    }
+    return () => navigationHistoryManager.removeModal('chat_emoji_modal');
+  }, [showFullEmojiModal]);
+
+  // 4. Priority 75: Staged attachment file preview
+  useEffect(() => {
+    if (selectedFile) {
+      navigationHistoryManager.pushModal('chat_selected_file', () => setSelectedFile(null), 75);
+    } else {
+      navigationHistoryManager.removeModal('chat_selected_file');
+    }
+    return () => navigationHistoryManager.removeModal('chat_selected_file');
+  }, [selectedFile]);
+
+  // 5. Priority 70: Paperclip attachment menu
+  useEffect(() => {
+    if (showAttachMenu) {
+      navigationHistoryManager.pushModal('chat_attach_menu', () => setShowAttachMenu(false), 70);
+    } else {
+      navigationHistoryManager.removeModal('chat_attach_menu');
+    }
+    return () => navigationHistoryManager.removeModal('chat_attach_menu');
+  }, [showAttachMenu]);
+
+  // 6. Priority 68: Composer quick emoji picker
+  useEffect(() => {
+    if (showComposerEmojiPicker) {
+      navigationHistoryManager.pushModal('chat_composer_emoji', () => setShowComposerEmojiPicker(false), 68);
+    } else {
+      navigationHistoryManager.removeModal('chat_composer_emoji');
+    }
+    return () => navigationHistoryManager.removeModal('chat_composer_emoji');
+  }, [showComposerEmojiPicker]);
+
+  // 7. Priority 65: Top-right 3-dots more options menu
+  useEffect(() => {
+    if (showOptionsMenu) {
+      navigationHistoryManager.pushModal('chat_options_menu', () => setShowOptionsMenu(false), 65);
+    } else {
+      navigationHistoryManager.removeModal('chat_options_menu');
+    }
+    return () => navigationHistoryManager.removeModal('chat_options_menu');
+  }, [showOptionsMenu]);
+
+  // 8. Priority 62: Quick reaction hover pill
+  useEffect(() => {
+    if (reactionTargetMessageId) {
+      navigationHistoryManager.pushModal('chat_reaction_target', () => setReactionTargetMessageId(null), 62);
+    } else {
+      navigationHistoryManager.removeModal('chat_reaction_target');
+    }
+    return () => navigationHistoryManager.removeModal('chat_reaction_target');
+  }, [reactionTargetMessageId]);
+
+  // 9. Priority 60: Message selection / long-press action state
+  useEffect(() => {
+    if (selectedMessageId) {
+      navigationHistoryManager.pushModal('chat_selected_message', () => setSelectedMessageId(null), 60);
+    } else {
+      navigationHistoryManager.removeModal('chat_selected_message');
+    }
+    return () => navigationHistoryManager.removeModal('chat_selected_message');
+  }, [selectedMessageId]);
+
+  // 10. Priority 58: Message search bar
+  useEffect(() => {
+    if (isSearching) {
+      navigationHistoryManager.pushModal(
+        'chat_search',
+        () => {
+          setIsSearching(false);
+          setSearchQuery('');
+        },
+        58
+      );
+    } else {
+      navigationHistoryManager.removeModal('chat_search');
+    }
+    return () => navigationHistoryManager.removeModal('chat_search');
+  }, [isSearching]);
+
+  // 11. Priority 55: Quoted reply banner
+  useEffect(() => {
+    if (replyingTo) {
+      navigationHistoryManager.pushModal('chat_replying_to', () => setReplyingTo(null), 55);
+    } else {
+      navigationHistoryManager.removeModal('chat_replying_to');
+    }
+    return () => navigationHistoryManager.removeModal('chat_replying_to');
+  }, [replyingTo]);
+
+  // 12. Priority 50: Floating Chat Window itself
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add('pirivena-chat-active');
-      navigationHistoryManager.pushModal('floating_chat', () => setIsOpen(false), 30);
+      navigationHistoryManager.pushModal(
+        'floating_chat',
+        () => {
+          setIsOpen(false);
+          setSelectedMessageId(null);
+          setReactionTargetMessageId(null);
+          setShowOptionsMenu(false);
+          setShowAttachMenu(false);
+          setShowComposerEmojiPicker(false);
+          setIsSearching(false);
+          setSearchQuery('');
+          setReplyingTo(null);
+          setSelectedFile(null);
+          setPreviewImage(null);
+        },
+        50
+      );
     } else {
       document.body.classList.remove('pirivena-chat-active');
       navigationHistoryManager.removeModal('floating_chat');
@@ -331,24 +499,6 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
       navigationHistoryManager.removeModal('floating_chat');
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    if (showFullEmojiModal) {
-      navigationHistoryManager.pushModal('chat_emoji_modal', () => setShowFullEmojiModal(false), 35);
-    } else {
-      navigationHistoryManager.removeModal('chat_emoji_modal');
-    }
-    return () => navigationHistoryManager.removeModal('chat_emoji_modal');
-  }, [showFullEmojiModal]);
-
-  useEffect(() => {
-    if (confirmDialog?.isOpen) {
-      navigationHistoryManager.pushModal('chat_confirm_dialog', () => setConfirmDialog(null), 40);
-    } else {
-      navigationHistoryManager.removeModal('chat_confirm_dialog');
-    }
-    return () => navigationHistoryManager.removeModal('chat_confirm_dialog');
-  }, [confirmDialog?.isOpen]);
 
   // Dynamic Virtual Keyboard & Visual Viewport Handler (Active ONLY when chat is open)
   useEffect(() => {
@@ -1011,13 +1161,13 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
               typeof window !== 'undefined' && window.innerWidth < 640 && viewportHeight
                 ? {
                     position: 'fixed',
-                    top: `${viewportOffsetTop}px`,
+                    top: 0,
                     left: 0,
                     right: 0,
-                    bottom: 'auto',
+                    bottom: 0,
                     width: '100vw',
                     height: `${viewportHeight}px`,
-                    maxHeight: `${viewportHeight}px`,
+                    maxHeight: '100dvh',
                   }
                 : undefined
             }
@@ -1031,7 +1181,7 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
                 typeof window !== 'undefined' && window.innerWidth < 640 && viewportHeight
                   ? {
                       height: `${viewportHeight}px`,
-                      maxHeight: `${viewportHeight}px`,
+                      maxHeight: '100dvh',
                     }
                   : undefined
               }
@@ -1043,12 +1193,133 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
             >
               {/* 🌟 2.1 WHATSAPP HEADER (TOP BAR) */}
               <div className="bg-[#202c33] pt-safe px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-[#2a3942] flex flex-col gap-2 shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                  {/* Group DP & Info */}
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div className={`w-10 h-10 rounded-full ${activeRoom.avatarBg} text-white flex items-center justify-center text-lg font-bold shrink-0 shadow-md ring-2 ring-[#00a884]/40`}>
-                      {activeRoom.icon}
+                {selectedMessageId && selectedMsg ? (
+                  /* 🌟 2.1.0 WHATSAPP ACTION BAR ON MESSAGE SELECTION */
+                  <div className="flex items-center justify-between gap-2 h-10 animate-fade-in select-none">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic('light');
+                          setSelectedMessageId(null);
+                        }}
+                        className="p-1.5 -ml-1 rounded-full text-[#aebac1] hover:text-white hover:bg-[#374248] transition cursor-pointer active:scale-90"
+                        title="තේරීම ඉවත් කරන්න (Deselect)"
+                      >
+                        <ArrowLeft className="w-5 h-5 text-[#e9edef]" />
+                      </button>
+                      <span className="font-bold text-xs sm:text-sm text-[#e9edef] truncate">
+                        1 තෝරා ඇත (Selected)
+                      </span>
                     </div>
+
+                    <div className="flex items-center gap-1 shrink-0 text-[#aebac1]">
+                      {/* React */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReactionTargetMessageId(selectedMessageId);
+                          setSelectedMessageId(null);
+                        }}
+                        className="p-2 rounded-full hover:bg-[#374248] text-[#00a884] transition cursor-pointer active:scale-90"
+                        title="ප්‍රතිචාර දක්වන්න (React)"
+                      >
+                        <SmilePlus className="w-4 h-4" />
+                      </button>
+
+                      {/* Reply */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReplyingTo(selectedMsg);
+                          setSelectedMessageId(null);
+                          setTimeout(() => messageInputRef.current?.focus(), 60);
+                        }}
+                        className="p-2 rounded-full hover:bg-[#374248] text-[#53bdeb] transition cursor-pointer active:scale-90"
+                        title="පිළිතුරු දෙන්න (Reply)"
+                      >
+                        <Reply className="w-4 h-4" />
+                      </button>
+
+                      {/* Copy */}
+                      {selectedMsg.content && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyText(selectedMsg.content);
+                          }}
+                          className="p-2 rounded-full hover:bg-[#374248] text-amber-400 transition cursor-pointer active:scale-90"
+                          title="පිටපත් කරන්න (Copy)"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Pin (Teacher & Admin Only) */}
+                      {isTeacherOrAdmin && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePin(selectedMessageId);
+                          }}
+                          className="p-2 rounded-full hover:bg-[#374248] text-amber-400 transition cursor-pointer active:scale-90"
+                          title={selectedMsg.is_pinned ? "Unpin message" : "Pin to top (ඉහළින් Pin කරන්න)"}
+                        >
+                          <Pin className={`w-4 h-4 ${selectedMsg.is_pinned ? 'fill-amber-400 text-amber-400' : 'text-amber-400'}`} />
+                        </button>
+                      )}
+
+                      {/* Delete (Author or Admin Only) */}
+                      {canDeleteSelected && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(selectedMessageId, isSelectedMine);
+                          }}
+                          className="p-2 rounded-full hover:bg-rose-950/80 text-rose-400 transition cursor-pointer active:scale-90"
+                          title={user?.role === 'admin' || user?.role === 'superadmin' ? 'පරිපාලක ලෙස මකා දමන්න' : 'පණිවිඩය මකන්න'}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Close Selection */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMessageId(null)}
+                        className="p-1.5 rounded-full hover:bg-[#374248] text-[#8696a0] hover:text-white transition cursor-pointer active:scale-90"
+                        title="වසන්න (Close)"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Group DP & Info */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                      {/* WhatsApp Mobile Back Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic('light');
+                          setIsOpen(false);
+                        }}
+                        className="p-2 -ml-1 rounded-full text-[#aebac1] hover:text-white hover:bg-[#374248] transition cursor-pointer active:scale-90 flex sm:hidden items-center justify-center shrink-0"
+                        title="ආපසු යන්න (Back to portal)"
+                        aria-label="Back"
+                      >
+                        <ArrowLeft className="w-5 h-5 text-[#e9edef]" />
+                      </button>
+
+                      <div className={`w-10 h-10 rounded-full ${activeRoom.avatarBg} text-white flex items-center justify-center text-lg font-bold shrink-0 shadow-md ring-2 ring-[#00a884]/40`}>
+                        {activeRoom.icon}
+                      </div>
 
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-xs sm:text-sm text-[#e9edef] truncate flex items-center gap-1.5 leading-tight">
@@ -1238,6 +1509,7 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
                     </button>
                   </div>
                 </div>
+              )}
 
                 {/* WhatsApp Search Bar (When Toggled) */}
                 <AnimatePresence>
@@ -1374,9 +1646,14 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
 
               {/* 🌟 2.2 WHATSAPP CHAT THREAD CANVAS WITH AUTHENTIC DOODLE PATTERN */}
               <div
+                ref={chatScrollContainerRef}
+                onScroll={handleChatScroll}
                 onClick={() => {
                   setSelectedMessageId(null);
                   setReactionTargetMessageId(null);
+                  setShowAttachMenu(false);
+                  setShowComposerEmojiPicker(false);
+                  setShowOptionsMenu(false);
                 }}
                 className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 relative"
                 style={{
@@ -1486,110 +1763,6 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
                         )}
                       </AnimatePresence>
 
-                      {/* 🌟 2.2.2 ULTRA-BEAUTIFUL TAP-AND-HOLD / LONG-PRESS ACTIONS POPUP */}
-                      <AnimatePresence>
-                        {isSelected && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.85, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: -12 }}
-                            exit={{ opacity: 0, scale: 0.85, y: 10 }}
-                            transition={{ type: 'spring', damping: 22, stiffness: 400 }}
-                            className={`absolute z-40 -top-14 ${
-                              isMine ? 'right-0' : 'left-0'
-                            } bg-[#1f2c34]/98 border border-[#00a884]/40 rounded-2xl px-2 py-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.95)] flex items-center gap-1.5 backdrop-blur-2xl ring-1 ring-white/10`}
-                          >
-                            {/* React */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setReactionTargetMessageId(msg.id);
-                                setSelectedMessageId(null);
-                              }}
-                              className="px-2.5 py-1.5 rounded-xl hover:bg-[#374248] text-xs text-[#e9edef] flex items-center gap-1.5 transition cursor-pointer active:scale-90"
-                              title="React"
-                            >
-                              <SmilePlus className="w-4 h-4 text-[#00a884]" />
-                              <span className="text-[11px] font-bold">React</span>
-                            </button>
-
-                            {/* Reply */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setReplyingTo(msg);
-                                setSelectedMessageId(null);
-                                setTimeout(() => messageInputRef.current?.focus(), 60);
-                              }}
-                              className="px-2.5 py-1.5 rounded-xl hover:bg-[#374248] text-xs text-[#e9edef] flex items-center gap-1.5 transition cursor-pointer active:scale-90"
-                              title="Reply"
-                            >
-                              <Reply className="w-4 h-4 text-[#53bdeb]" />
-                              <span className="text-[11px] font-bold">Reply</span>
-                            </button>
-
-                            {/* Copy */}
-                            {msg.content && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyText(msg.content);
-                                }}
-                                className="px-2.5 py-1.5 rounded-xl hover:bg-[#374248] text-xs text-[#e9edef] flex items-center gap-1.5 transition cursor-pointer active:scale-90"
-                                title="Copy Text"
-                              >
-                                <Copy className="w-4 h-4 text-amber-400" />
-                                <span className="text-[11px] font-bold">Copy</span>
-                              </button>
-                            )}
-
-                            {/* Pin / Unpin (Teacher & Admin Only) */}
-                            {isTeacherOrAdmin && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleTogglePin(msg.id);
-                                }}
-                                className="px-2.5 py-1.5 rounded-xl hover:bg-[#374248] text-xs text-amber-400 flex items-center gap-1.5 transition cursor-pointer active:scale-90"
-                                title={msg.is_pinned ? "Unpin message" : "Pin to top (ඉහළින් Pin කරන්න)"}
-                              >
-                                <Pin className={`w-4 h-4 ${msg.is_pinned ? 'fill-amber-400' : ''}`} />
-                                <span className="text-[11px] font-bold">{msg.is_pinned ? 'Unpin' : 'Pin'}</span>
-                              </button>
-                            )}
-
-                            {/* Delete (Admin or Message Author ONLY) */}
-                            {canDelete && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMessage(msg.id, isMine);
-                                }}
-                                className="px-2.5 py-1.5 rounded-xl hover:bg-rose-950/80 text-xs text-rose-400 flex items-center gap-1.5 transition cursor-pointer font-bold active:scale-90"
-                                title={isAdmin && !isMine ? 'පරිපාලක ලෙස මකා දමන්න' : 'මගේ පණිවිඩය මකන්න'}
-                              >
-                                <Trash2 className="w-4 h-4 text-rose-400" />
-                                <span className="text-[11px]">{isAdmin && !isMine ? 'Admin Delete' : 'Delete'}</span>
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedMessageId(null);
-                              }}
-                              className="p-1 rounded-full text-[#8696a0] hover:text-white hover:bg-white/10 transition"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
 
                       {/* WhatsApp Speech Bubble Card with Long-Press / Tap-and-Hold Handler */}
                       <div
@@ -1875,6 +2048,23 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
                 })}
 
                 <div ref={messagesEndRef} />
+
+                {/* 🌟 WhatsApp-Style Floating Jump to Bottom Button */}
+                <AnimatePresence>
+                  {showScrollBottomBtn && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.7, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.7, y: 10 }}
+                      type="button"
+                      onClick={scrollToBottom}
+                      className="sticky bottom-2 float-right z-30 w-9 h-9 rounded-full bg-[#202c33] hover:bg-[#2a3942] text-[#00a884] shadow-[0_6px_20px_rgba(0,0,0,0.6)] border border-[#2a3942] flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+                      title="නවතම පණිවිඩ වෙත (Scroll to bottom)"
+                    >
+                      <ChevronDown className="w-5 h-5 stroke-[2.5]" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* 🌟 2.3 REPLYING-TO PREVIEW BAR */}
@@ -1955,77 +2145,96 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
               {/* 🌟 2.5 ATTACHMENT MENU POPOVER */}
               <AnimatePresence>
                 {showAttachMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 15 }}
-                    className="p-3 bg-[#202c33] border-t border-[#2a3942] grid grid-cols-2 gap-2 shrink-0"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-3 rounded-2xl bg-[#111b21] hover:bg-[#2a3942] flex items-center gap-3 transition cursor-pointer border border-[#2a3942]"
+                  <>
+                    <div
+                      className="fixed inset-0 z-[38]"
+                      onClick={() => setShowAttachMenu(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 15 }}
+                      className="p-3 bg-[#202c33] border-t border-[#2a3942] grid grid-cols-2 gap-2 shrink-0 z-[39] relative"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-                        <ImageIcon className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-[#e9edef]">Photos & Media</div>
-                        <div className="text-[9.5px] text-[#8696a0]">JPG, PNG, WEBP</div>
-                      </div>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAttachMenu(false);
+                          fileInputRef.current?.click();
+                        }}
+                        className="p-3 rounded-2xl bg-[#111b21] hover:bg-[#2a3942] flex items-center gap-3 transition cursor-pointer border border-[#2a3942]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-[#e9edef]">Photos & Media</div>
+                          <div className="text-[9.5px] text-[#8696a0]">JPG, PNG, WEBP</div>
+                        </div>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => docInputRef.current?.click()}
-                      className="p-3 rounded-2xl bg-[#111b21] hover:bg-[#2a3942] flex items-center gap-3 transition cursor-pointer border border-[#2a3942]"
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-[#e9edef]">Document / PDF</div>
-                        <div className="text-[9.5px] text-[#8696a0]">PDF Study Notes</div>
-                      </div>
-                    </button>
-                  </motion.div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAttachMenu(false);
+                          docInputRef.current?.click();
+                        }}
+                        className="p-3 rounded-2xl bg-[#111b21] hover:bg-[#2a3942] flex items-center gap-3 transition cursor-pointer border border-[#2a3942]"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-xs font-bold text-[#e9edef]">Document / PDF</div>
+                          <div className="text-[9.5px] text-[#8696a0]">PDF Study Notes</div>
+                        </div>
+                      </button>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
 
               {/* 🌟 2.6 COMPOSER QUICK EMOJI TRAY */}
               <AnimatePresence>
                 {showComposerEmojiPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="p-2.5 bg-[#202c33] border-t border-[#2a3942] flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0"
-                  >
-                    {QUICK_REACTION_EMOJIS.map((emoji, idx) => (
+                  <>
+                    <div
+                      className="fixed inset-0 z-[38]"
+                      onClick={() => setShowComposerEmojiPicker(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="p-2.5 bg-[#202c33] border-t border-[#2a3942] flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0 z-[39] relative"
+                    >
+                      {QUICK_REACTION_EMOJIS.map((emoji, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setInputText((prev) => prev + emoji);
+                            triggerHaptic('light');
+                          }}
+                          className="w-9 h-9 rounded-xl hover:bg-[#374248] text-lg flex items-center justify-center transition cursor-pointer active:scale-90 shrink-0"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
                       <button
-                        key={idx}
                         type="button"
                         onClick={() => {
-                          setInputText((prev) => prev + emoji);
                           triggerHaptic('light');
+                          setShowComposerEmojiPicker(false);
+                          setShowFullEmojiModal(true);
                         }}
-                        className="w-9 h-9 rounded-xl hover:bg-[#374248] text-lg flex items-center justify-center transition cursor-pointer active:scale-90 shrink-0"
+                        className="px-2.5 py-1.5 rounded-xl bg-[#111b21] hover:bg-[#374248] border border-[#2a3942] text-xs text-[#00a884] font-bold flex items-center gap-1 shrink-0"
                       >
-                        {emoji}
+                        <span>තවත්</span>
+                        <Plus className="w-3.5 h-3.5" />
                       </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        triggerHaptic('light');
-                        setShowFullEmojiModal(true);
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl bg-[#111b21] hover:bg-[#374248] border border-[#2a3942] text-xs text-[#00a884] font-bold flex items-center gap-1 shrink-0"
-                    >
-                      <span>තවත්</span>
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </motion.div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
 
@@ -2123,6 +2332,12 @@ export const FloatingPirivenaChat: React.FC<FloatingPirivenaChatProps> = ({ user
                 {/* WhatsApp Circular Green Send Button */}
                 <button
                   type="button"
+                  onTouchStart={(e) => {
+                    e.preventDefault();
+                    if ((inputText.trim() || selectedFile) && !isSending) {
+                      handleSendMessage();
+                    }
+                  }}
                   onMouseDown={(e) => {
                     e.preventDefault();
                   }}
