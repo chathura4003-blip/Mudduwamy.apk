@@ -44,7 +44,6 @@ class NotificationService {
         description: 'විභාග, පැමිණීම් සහ අධ්‍යයන නිවේදන සඳහා',
         importance: 4, // High importance (Heads-up banner & Lock Screen)
         visibility: 1, // VISIBILITY_PUBLIC (Shows on Lock Screen)
-        sound: 'res_custom_notification.wav',
         vibration: true,
         lights: true,
         lightColor: '#D97706',
@@ -57,7 +56,6 @@ class NotificationService {
         description: 'ගුරු-සිසු සජීවී පණිවිඩ සහ සාකච්ඡා සඳහා',
         importance: 4, // High importance (Heads-up banner & Lock Screen)
         visibility: 1, // VISIBILITY_PUBLIC (Shows on Lock Screen)
-        sound: 'res_custom_notification.wav',
         vibration: true,
         lights: true,
         lightColor: '#F59E0B',
