@@ -134,16 +134,24 @@ export const BottomNavigationBar: React.FC = () => {
     };
   }, []);
 
-  // Defensive check: BottomNavigationBar must NEVER render for admin or superadmin
-  if (!user || user.role === 'admin' || user.role === 'superadmin' || isKeyboardVisible || isModalOrChatActive) {
+  if (!user || isKeyboardVisible || isModalOrChatActive) {
     return null;
   }
 
-  // Define role-specific navigation items (Teacher & Student only)
+  // Define role-specific navigation items (Admin, Teacher & Student)
   let navItems: BottomNavTabItem[] = [];
 
-  if (user.role === 'teacher') {
-    // 1. TEACHER BOTTOM NAVIGATION TABS
+  if (user.role === 'admin' || user.role === 'superadmin') {
+    // 1. ADMIN BOTTOM NAVIGATION TABS
+    navItems = [
+      { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Home', icon: Home },
+      { id: 'students', labelSi: 'සිසුන්', labelEn: 'Students', icon: Users },
+      { id: 'teachers', labelSi: 'ගුරුවරුන්', labelEn: 'Teachers', icon: GraduationCap },
+      { id: 'classes', labelSi: 'පන්ති', labelEn: 'Classes', icon: School },
+      { id: 'settings', labelSi: 'සැකසුම්', labelEn: 'Settings', icon: Settings },
+    ];
+  } else if (user.role === 'teacher') {
+    // 2. TEACHER BOTTOM NAVIGATION TABS
     navItems = [
       { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Home', icon: Home },
       { id: 'roster', labelSi: 'පන්ති', labelEn: 'Classes', icon: School },
@@ -152,7 +160,7 @@ export const BottomNavigationBar: React.FC = () => {
       { id: 'settings', labelSi: 'ගිණුම', labelEn: 'Profile', icon: User },
     ];
   } else if (user.role === 'student') {
-    // 2. STUDENT BOTTOM NAVIGATION TABS
+    // 3. STUDENT BOTTOM NAVIGATION TABS
     navItems = [
       { id: 'overview', labelSi: 'මුල් පිටුව', labelEn: 'Home', icon: Home },
       { id: 'materials', labelSi: 'පාඩම්', labelEn: 'Lessons', icon: BookOpen },

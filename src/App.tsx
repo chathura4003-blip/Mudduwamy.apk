@@ -496,8 +496,8 @@ const MainAppContent: React.FC = () => {
         </AnimatePresence>
       </main>
 
-      {/* 📱 Mobile Bottom Navigation Bar (Rendered ONLY for Teacher and Student portals; Admin uses dedicated Admin Navbar) */}
-      {user && user.role !== 'admin' && user.role !== 'superadmin' && (currentTab === 'teacher_portal' || currentTab === 'student_portal') && (
+      {/* 📱 Mobile Bottom Navigation Bar (Rendered for Admin, Teacher, and Student portals) */}
+      {user && (currentTab === 'admin_portal' || currentTab === 'teacher_portal' || currentTab === 'student_portal') && (
         <BottomNavigationBar />
       )}
 
